@@ -35,6 +35,22 @@ src/controllers/ + routes/  khớp từng endpoint trong api-design.md
 src/middleware/              envelope lỗi, validate (zod), Idempotency-Key
 ```
 
+## Module eKYC
+
+`POST /customers/:id/ekyc/verify` (multipart: `id_image` + `face_match_score` tùy chọn) — xác
+minh danh tính chạy thật bằng thư viện mã nguồn mở, không dùng vendor eKYC thương mại:
+- OCR đọc giấy tờ: `tesseract.js`, chạy ở backend (`src/services/ekycService.ts`).
+- Đối chiếu khuôn mặt: `face-api.js` (`@vladmandic/face-api`), tự host ở `public/vendor/face-api/`,
+  chạy ngay tại trình duyệt — client tự tính `face_match_score` (0-100) rồi gửi kèm lên.
+
+Kết quả (kể cả lần fail) được lưu vào `ekyc_verifications` làm bằng chứng đối soát; nếu quyết
+định là `verified`/`rejected` và khách hàng đang `pending`, tự động gọi `customerService.updateKyc()`
+để cập nhật `kyc_status` (tái dùng đúng rule 1 chiều đã có, không bypass).
+
+**Giới hạn cố ý (khác eKYC ngân hàng thật)**: không chống giả mạo/liveness thật (chỉ so 1 ảnh
+tĩnh), không đọc chip NFC, không tra cứu CSDL dân cư — thực tế T24 thật cũng không tự làm các
+phần này, luôn gọi ra 1 nhà cung cấp eKYC chuyên biệt bên ngoài rồi nhận kết quả về.
+
 ## Điểm khác với schema.sql gốc (MySQL → Postgres)
 
 - `AUTO_INCREMENT` → `GENERATED ALWAYS AS IDENTITY`

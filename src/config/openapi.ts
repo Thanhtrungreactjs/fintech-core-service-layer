@@ -159,6 +159,23 @@ const schemas = {
       created_at: { type: "string", format: "date-time" },
     },
   },
+  EkycVerification: {
+    type: "object",
+    properties: {
+      verification_id: { type: "integer" },
+      customer_id: { type: "integer" },
+      extracted_full_name: { type: "string", nullable: true },
+      extracted_id_number: { type: "string", nullable: true },
+      extracted_dob: { type: "string", format: "date", nullable: true },
+      ocr_confidence: { type: "string", nullable: true },
+      name_match_score: { type: "string", nullable: true },
+      face_match_score: { type: "string", nullable: true },
+      decision: { type: "string", enum: ["verified", "rejected", "manual_review"] },
+      reason: { type: "string", nullable: true },
+      kyc_status_applied: { type: "boolean" },
+      created_at: { type: "string", format: "date-time" },
+    },
+  },
   ExchangeRate: {
     type: "object",
     properties: {
@@ -357,6 +374,25 @@ export const openapiSpec = {
         tags: ["Term Deposits"], summary: "Danh sách sổ tiết kiệm của khách hàng (gộp mọi tài khoản)",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }, ...pageParams],
         responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({ type: "array", items: schemas.TermDeposit }) } } } },
+      },
+    },
+    "/customers/{id}/ekyc/verify": {
+      post: {
+        tags: ["Customers"], summary: "Xác minh eKYC (OCR giấy tờ + đối chiếu khuôn mặt)",
+        description: "multipart/form-data: field 'id_image' (ảnh giấy tờ, bắt buộc) + field 'face_match_score' (số 0-100, do client tự tính bằng face-api.js so ảnh giấy tờ với ảnh selfie, tùy chọn). Nếu quyết định là verified/rejected và khách hàng đang pending, tự động cập nhật kyc_status.",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        requestBody: { required: true, content: { "multipart/form-data": { schema: {
+          type: "object", required: ["id_image"],
+          properties: { id_image: { type: "string", format: "binary" }, face_match_score: { type: "number", minimum: 0, maximum: 100 } },
+        } } } },
+        responses: { "201": { description: "Đã ghi nhận kết quả xác minh", content: { "application/json": { schema: envelope(schemas.EkycVerification) } } } },
+      },
+    },
+    "/customers/{id}/ekyc": {
+      get: {
+        tags: ["Customers"], summary: "Lịch sử xác minh eKYC của khách hàng",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({ type: "array", items: schemas.EkycVerification }) } } } },
       },
     },
     "/customers/{id}/loans": {

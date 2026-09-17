@@ -196,6 +196,25 @@
       </div>
 
       <div class="card">
+        <h3>Xác minh eKYC (OCR giấy tờ + đối chiếu khuôn mặt)</h3>
+        <div class="hint">
+          Chạy thật bằng thư viện mã nguồn mở, không phải mock: OCR đọc giấy tờ (<code>tesseract.js</code>, chạy ở
+          server) + đối chiếu khuôn mặt ảnh giấy tờ với ảnh selfie (<code>face-api.js</code>, chạy ngay tại trình
+          duyệt, không gửi ảnh khuôn mặt lên đâu khác). <b>Không có</b> ở đây: chống giả mạo/liveness thật (chỉ so 1
+          ảnh tĩnh), đọc chip NFC, tra cứu CSDL dân cư — những phần này T24 thật cũng không tự làm, luôn gọi ra 1 nhà
+          cung cấp eKYC chuyên biệt bên ngoài.
+        </div>
+        <div class="grid" style="margin-top:10px;">
+          <div class="field"><label>Mã khách hàng *</label><input id="ekyc-customer-id" type="number" min="1"></div>
+          <div class="field"><label>Ảnh giấy tờ (CCCD/CMND) *</label><input id="ekyc-id-image" type="file" accept="image/*"></div>
+          <div class="field"><label>Ảnh selfie *</label><input id="ekyc-selfie-image" type="file" accept="image/*"></div>
+        </div>
+        <div class="row-actions"><button class="warn" onclick="withBusyButton(this, runEkycVerify)">Xác minh eKYC</button></div>
+        <div id="ekyc-preview" style="display:flex;gap:16px;margin-top:10px;"></div>
+        <div id="ekyc-result"></div>
+      </div>
+
+      <div class="card">
         <h3>Lịch sử giao dịch của khách hàng</h3>
         <p class="muted">Gộp giao dịch từ tất cả tài khoản đứng tên khách hàng này, sắp theo thời gian mới nhất. Bấm "Xem chi tiết" ở khối phía trên trước để nạp danh sách tài khoản.</p>
         <div id="customer-txn-history" class="empty">Chưa có dữ liệu.</div>
@@ -692,6 +711,7 @@
 </div>
 <div id="toast"></div>
 
+<script src="/vendor/face-api/face-api.js"></script>
 <script>
 const API = "/api/v1";
 
@@ -1150,6 +1170,102 @@ async function updateKyc(){
   const res = await api("PATCH", `/customers/${id}/kyc`, {kyc_status});
   toast("Đã cập nhật KYC khách hàng #" + id + " → " + kyc_status);
   document.getElementById("c-kyc-result").innerHTML = renderKV(res.data);
+}
+
+// ---- eKYC (OCR + đối chiếu khuôn mặt thật, chạy tại trình duyệt bằng face-api.js) ----
+let EKYC_MODELS_LOADED = false;
+async function ensureFaceApiModels(){
+  if(EKYC_MODELS_LOADED) return;
+  const MODEL_URL = "/vendor/face-api/models";
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+  ]);
+  EKYC_MODELS_LOADED = true;
+}
+
+function loadImageFromFile(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// face-api.js quy ước: khoảng cách embedding <= 0.6 thường coi là cùng 1 người. Quy đổi
+// tuyến tính 2 đoạn để mốc 0.6 rơi đúng 60 điểm — khớp FACE_MATCH_THRESHOLD phía backend
+// (src/services/ekycService.ts) để "khớp/không khớp" ở UI và backend nói cùng 1 ngôn ngữ.
+function faceDistanceToScore(distance){
+  if(distance <= 0.6) return 100 - (distance / 0.6) * 40;
+  return Math.max(0, 60 - ((distance - 0.6) / 0.4) * 60);
+}
+
+async function runEkycVerify(){
+  const customerId = document.getElementById("ekyc-customer-id").value;
+  const idFile = document.getElementById("ekyc-id-image").files[0];
+  const selfieFile = document.getElementById("ekyc-selfie-image").files[0];
+  if(!isPositiveIntStr(customerId)) return toast("Nhập mã khách hàng hợp lệ (số nguyên dương)", false);
+  if(!idFile) return toast("Chọn ảnh giấy tờ", false);
+  if(!selfieFile) return toast("Chọn ảnh selfie", false);
+
+  document.getElementById("ekyc-result").innerHTML = `<div class="empty">Đang tải model nhận diện khuôn mặt…</div>`;
+  await ensureFaceApiModels();
+
+  const [idImg, selfieImg] = await Promise.all([loadImageFromFile(idFile), loadImageFromFile(selfieFile)]);
+  document.getElementById("ekyc-preview").innerHTML =
+    `<img src="${idImg.src}" style="max-width:220px;border:1px solid var(--border);border-radius:4px;">` +
+    `<img src="${selfieImg.src}" style="max-width:220px;border:1px solid var(--border);border-radius:4px;">`;
+
+  document.getElementById("ekyc-result").innerHTML = `<div class="empty">Đang phát hiện khuôn mặt…</div>`;
+  const [idDet, selfieDet] = await Promise.all([
+    faceapi.detectSingleFace(idImg, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor(),
+    faceapi.detectSingleFace(selfieImg, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor(),
+  ]);
+
+  let faceMatchScore = null;
+  let faceNote;
+  if(!idDet) faceNote = "Không phát hiện khuôn mặt trong ảnh giấy tờ — bỏ qua bước đối chiếu khuôn mặt, chuyển cho checker xem xét thủ công.";
+  else if(!selfieDet) faceNote = "Không phát hiện khuôn mặt trong ảnh selfie — bỏ qua bước đối chiếu khuôn mặt, chuyển cho checker xem xét thủ công.";
+  else {
+    const distance = faceapi.euclideanDistance(idDet.descriptor, selfieDet.descriptor);
+    faceMatchScore = faceDistanceToScore(distance);
+    faceNote = `Khoảng cách embedding: ${distance.toFixed(3)} → điểm khớp khuôn mặt ${faceMatchScore.toFixed(1)}%`;
+  }
+
+  document.getElementById("ekyc-result").innerHTML = `<div class="empty">Đang OCR giấy tờ + ghi nhận kết quả…</div>`;
+  const form = new FormData();
+  form.append("id_image", idFile);
+  if(faceMatchScore !== null) form.append("face_match_score", faceMatchScore.toFixed(2));
+
+  const res = await fetch(`${API}/customers/${customerId}/ekyc/verify`, { method: "POST", body: form });
+  const json = await res.json();
+  if(!res.ok || json.status === "ERROR"){
+    const msg = json?.error?.message || "Lỗi xác minh eKYC";
+    toast(msg, false);
+    document.getElementById("ekyc-result").innerHTML = `<div class="field-error">${msg}</div>`;
+    return;
+  }
+
+  const decisionLabel = {verified:"Đã xác minh", rejected:"Từ chối", manual_review:"Cần xem xét thủ công"};
+  const decisionClass = {verified:"b-active", rejected:"b-closed", manual_review:"b-pending"};
+  const d = json.data;
+  toast(`Kết quả eKYC: ${decisionLabel[d.decision]}` + (d.kyc_status_applied ? " — đã cập nhật KYC khách hàng" : ""),
+    d.decision === "rejected" ? false : true);
+  document.getElementById("ekyc-result").innerHTML =
+    `<div class="hint">${faceNote}</div>` +
+    `<div class="kv-wrap"><div class="kv">` +
+    `<div class="k">Quyết định</div><div><span class="badge ${decisionClass[d.decision]}">${decisionLabel[d.decision]}</span></div>` +
+    `<div class="k">Lý do</div><div>${d.reason}</div>` +
+    `<div class="k">Họ tên trích xuất (OCR)</div><div>${d.extracted_full_name ?? "-"}</div>` +
+    `<div class="k">Số giấy tờ trích xuất</div><div>${d.extracted_id_number ?? "-"}</div>` +
+    `<div class="k">Ngày sinh trích xuất</div><div>${d.extracted_dob ?? "-"}</div>` +
+    `<div class="k">Độ tin cậy OCR</div><div>${d.ocr_confidence ?? "-"}%</div>` +
+    `<div class="k">Điểm khớp tên</div><div>${d.name_match_score ?? "-"}%</div>` +
+    `<div class="k">Điểm khớp khuôn mặt</div><div>${d.face_match_score ?? "-"}%</div>` +
+    `<div class="k">Đã áp dụng vào kyc_status?</div><div>${d.kyc_status_applied ? "Có" : "Không"}</div>` +
+    `</div></div>`;
 }
 
 // ---- Accounts ----

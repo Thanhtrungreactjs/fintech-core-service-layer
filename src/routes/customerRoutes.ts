@@ -3,6 +3,7 @@ import { customerController } from "../controllers/customerController";
 import { accountController } from "../controllers/accountController";
 import { loanController } from "../controllers/loanController";
 import { termDepositController } from "../controllers/termDepositController";
+import { ekycController, ekycUpload } from "../controllers/ekycController";
 import { validate } from "../middleware/validate";
 import { requireIdempotencyKey } from "../middleware/idempotency";
 import { idParam } from "../validators/common";
@@ -51,4 +52,15 @@ customerRoutes.post(
   requireIdempotencyKey(),
   validate({ params: idParam("id"), body: createLoanBody }),
   loanController.create
+);
+customerRoutes.post(
+  "/:id/ekyc/verify",
+  ekycUpload,
+  validate({ params: idParam("id") }),
+  ekycController.verify
+);
+customerRoutes.get(
+  "/:id/ekyc",
+  validate({ params: idParam("id") }),
+  ekycController.listByCustomer
 );

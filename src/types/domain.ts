@@ -127,6 +127,23 @@ export interface ExchangeRate {
   rate_date: string;
 }
 
+export type EkycDecision = "verified" | "rejected" | "manual_review";
+
+export interface EkycVerification {
+  verification_id: number;
+  customer_id: number;
+  extracted_full_name: string | null;
+  extracted_id_number: string | null;
+  extracted_dob: string | null;
+  ocr_confidence: string | null;
+  name_match_score: string | null;
+  face_match_score: string | null;
+  decision: EkycDecision;
+  reason: string | null;
+  kyc_status_applied: boolean;
+  created_at: string;
+}
+
 export type TermDepositStatus = "active" | "matured" | "withdrawn" | "closed";
 export type InterestMethod = "simple" | "compound";
 export type TdPayoutMethod = "maturity" | "monthly";
