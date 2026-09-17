@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: fintech-core-service-layer
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: FRAUD_AMOUNT_THRESHOLD
+        value: "50000000"
+      - key: COB_CRON_SCHEDULE
+        value: "0 0 * * *"
