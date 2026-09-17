@@ -1,0 +1,38 @@
+import { Router } from "express";
+import { customerRoutes } from "./customerRoutes";
+import { accountTypeRoutes } from "./accountTypeRoutes";
+import { accountRoutes } from "./accountRoutes";
+import { cardRoutes } from "./cardRoutes";
+import { merchantRoutes } from "./merchantRoutes";
+import { transactionCategoryRoutes } from "./transactionCategoryRoutes";
+import { transactionRoutes } from "./transactionRoutes";
+import { loanRoutes } from "./loanRoutes";
+import { fraudAlertRoutes } from "./fraudAlertRoutes";
+import { exchangeRateRoutes } from "./exchangeRateRoutes";
+import { termDepositRoutes } from "./termDepositRoutes";
+import { glRoutes } from "./glRoutes";
+import { authQueueRoutes } from "./authQueueRoutes";
+import { appUserRoutes } from "./appUserRoutes";
+import { cobRoutes } from "./cobRoutes";
+import { authRoutes } from "./authRoutes";
+import { fxRoutes } from "./fxRoutes";
+
+export const apiRouter = Router();
+
+apiRouter.use("/customers", customerRoutes);
+apiRouter.use("/account-types", accountTypeRoutes);
+apiRouter.use("/accounts", accountRoutes);
+apiRouter.use("/cards", cardRoutes);
+apiRouter.use("/merchants", merchantRoutes);
+apiRouter.use("/transaction-categories", transactionCategoryRoutes);
+apiRouter.use("/transactions", transactionRoutes);
+apiRouter.use("/loans", loanRoutes);
+apiRouter.use("/fraud-alerts", fraudAlertRoutes);
+apiRouter.use("/exchange-rates", exchangeRateRoutes);
+apiRouter.use("/term-deposits", termDepositRoutes);
+apiRouter.use("/gl", glRoutes);
+apiRouter.use("/auth-queue", authQueueRoutes);
+apiRouter.use("/users", appUserRoutes);
+apiRouter.use("/cob", cobRoutes);
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/fx-transfers", fxRoutes);

@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinCore Console</title>
+<style>
+  :root{
+    --navy:#0b1f3a; --navy-2:#122a4d; --navy-3:#1a3866;
+    --accent:#c9a24a; --accent-2:#2f7d6b;
+    --bg:#e9edf4; --card:#ffffff; --border:#c9d3e0;
+    --text:#1c2733; --muted:#5b6b7f;
+    --ok:#1f8a53; --warn:#b7791f; --danger:#c0392b; --info:#2563a8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Tahoma,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;}
+
+  .systembar{background:#050f22;color:#8fa7c9;font-size:11px;padding:5px 16px;display:flex;justify-content:space-between;letter-spacing:.4px;font-family:Consolas,monospace;}
+  .systembar .sep{color:#33507a;margin:0 8px;}
+
+  .app{display:flex;min-height:calc(100vh - 26px);}
+  .sidebar{width:225px;background:linear-gradient(180deg,var(--navy),var(--navy-2));color:#dce6f5;flex-shrink:0;}
+  .sidebar .brand{padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .sidebar .brand b{color:#fff;font-size:16px;letter-spacing:.4px;}
+  .sidebar .brand span{display:block;font-size:10.5px;color:var(--accent);margin-top:3px;letter-spacing:1px;text-transform:uppercase;}
+  .nav-item{padding:10px 18px 10px 20px;cursor:pointer;border-left:3px solid transparent;font-size:12.8px;color:#c3d1e6;letter-spacing:.2px;}
+  .nav-item::before{content:"›";margin-right:7px;color:var(--accent);font-weight:700;}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .nav-item.active{background:var(--navy-3);border-left-color:var(--accent);color:#fff;font-weight:700;}
+
+  .content{flex:1;padding:18px 26px 40px;max-width:1300px;min-width:0;}
+  header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  header.top h1{font-size:18px;margin:0;color:var(--navy);letter-spacing:.2px;}
+  header.top .sub{color:var(--muted);font-size:11.5px;}
+  .crumb{background:#dfe8f4;border:1px solid var(--border);color:var(--navy-3);font-family:Consolas,monospace;
+    font-size:11px;padding:6px 12px;margin-bottom:16px;letter-spacing:.4px;border-radius:2px;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:3px;padding:16px 18px;margin-bottom:16px;
+    box-shadow:0 1px 2px rgba(11,31,58,.04);}
+  .card h3{margin:-17px -19px 14px -19px;font-size:12px;color:#fff;background:var(--navy-3);
+    padding:9px 18px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;border-radius:2px 2px 0 0;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;}
+  .grid-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start;}
+  .grid-dash > .card{min-width:0;}
+
+  label{display:block;font-size:10.8px;color:var(--muted);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+  input,select{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:2px;font-size:12.8px;background:#fbfcfe;}
+  input:focus,select:focus{outline:none;border-color:var(--navy-3);background:#fff;}
+  .field{margin-bottom:2px;min-width:0;}
+  .field.has-error input,.field.has-error select{border-color:var(--danger);background:#fdf2f1;}
+  .field-error{color:var(--danger);font-size:11px;margin-top:3px;line-height:1.3;}
+  .row-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+
+  button{cursor:pointer;border:1px solid transparent;border-radius:2px;padding:8px 16px;font-size:11.5px;
+    font-weight:700;text-transform:uppercase;letter-spacing:.4px;background:var(--navy-3);color:#fff;}
+  button:hover{background:var(--navy);}
+  button.secondary{background:#eef2f7;color:var(--navy);border:1px solid var(--border);}
+  button.secondary:hover{background:#e2e9f2;}
+  button.ok{background:var(--accent-2);} button.ok:hover{background:#235f52;}
+  button.warn{background:var(--warn);color:#fff;} button.warn:hover{background:#9c6519;}
+  button.danger{background:var(--danger);color:#fff;} button.danger:hover{background:#9e2d20;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.2px;min-width:max-content;}
+  th,td{text-align:left;padding:6px 9px;border:1px solid var(--border);white-space:nowrap;}
+  th{background:#e4ecf6;color:var(--navy);font-weight:700;text-transform:uppercase;font-size:10.2px;letter-spacing:.4px;}
+  tbody tr:nth-child(even) td{background:#f6f9fc;}
+  tr:hover td{background:#eaf2fb;}
+
+  .mono{font-family:Consolas,monospace;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:2px;font-size:10.8px;font-weight:700;color:#fff;letter-spacing:.2px;}
+  .b-active,.b-completed,.b-verified,.b-closed_fp,.b-authorized{background:var(--ok);}
+  .b-dormant,.b-pending,.b-reviewing{background:var(--warn);}
+  .b-frozen,.b-blocked,.b-matured{background:var(--info);}
+  .b-closed,.b-reversed,.b-expired,.b-rejected,.b-open,.b-closed_confirmed,.b-withdrawn,.b-defaulted,.b-failed{background:var(--danger);}
+  .b-debit,.b-credit,.b-prepaid,.b-deposit,.b-withdrawal,.b-transfer,.b-payment,.b-fee,.b-interest{background:#5a6b82;}
+
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:0;font-size:12.8px;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+  .kv div{padding:7px 12px;border-bottom:1px solid var(--border);}
+  .kv div:nth-last-child(2),.kv div:last-child{border-bottom:none;}
+  .kv div.k{color:var(--navy);font-weight:700;background:#eef2f7;font-size:11.5px;}
+  .kv-wrap{background:#f7f9fc;border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:12px;}
+
+  .muted{color:var(--muted);font-size:12px;}
+  .toolbar{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
+  .toolbar .field{min-width:150px;}
+
+  #toast{position:fixed;bottom:18px;right:18px;z-index:99;display:flex;flex-direction:column;gap:8px;}
+  .toast-item{padding:10px 16px;border-radius:2px;color:#fff;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:360px;}
+  .toast-item.ok{background:var(--ok);} .toast-item.err{background:var(--danger);} .toast-item.warn{background:var(--warn);}
+
+  .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .split > .card{min-width:0;}
+  @media(max-width:900px){.split{grid-template-columns:1fr;}}
+  .empty{color:var(--muted);font-size:12px;padding:8px 0;}
+</style>
+</head>
+<body>
+<div class="systembar">
+  <span>FINCORE UNIVERSAL BANKING <span class="sep">|</span> MÔI TRƯỜNG DEMO</span>
+  <span id="sysclock"></span>
+</div>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand"><b>FinCore Console</b><span>Back office kiểu T24</span></div>
+    <div class="nav-item active" data-panel="dashboard">Tổng quan</div>
+    <div class="nav-item" data-panel="customers">Khách hàng</div>
+    <div class="nav-item" data-panel="accounts">Tài khoản</div>
+    <div class="nav-item" data-panel="deposits">Tiền gửi</div>
+    <div class="nav-item" data-panel="cards">Thẻ</div>
+    <div class="nav-item" data-panel="transactions">Giao dịch</div>
+    <div class="nav-item" data-panel="loans">Khoản vay</div>
+    <div class="nav-item" data-panel="fraud">Cảnh báo gian lận</div>
+    <div class="nav-item" data-panel="gl">Sổ cái (GL)</div>
+    <div class="nav-item" data-panel="authqueue">Duyệt lệnh (Maker-Checker)</div>
+    <div class="nav-item" data-panel="cob">Batch cuối ngày (COB)</div>
+    <div class="nav-item" data-panel="refdata">Danh mục</div>
+  </nav>
+  <main class="content">
+    <header class="top">
+      <div>
+        <h1 id="panel-title">Tổng quan</h1>
+        <div class="sub">Fintech Core Service Layer — /api/v1</div>
+      </div>
+    </header>
+    <div class="crumb" id="crumb">FINCORE › TỔNG QUAN</div>
+
+    <!-- DASHBOARD -->
+    <section class="panel active" id="panel-dashboard">
+      <div class="card">
+        <h3>Chào mừng</h3>
+        <p class="muted">Giao diện demo để thao tác nhanh các nghiệp vụ: tạo khách hàng, mở tài khoản, phát hành thẻ, thực hiện giao dịch, tạo khoản vay, xử lý cảnh báo gian lận. Dữ liệu đọc/ghi trực tiếp trên Postgres (Supabase) qua API nội bộ.</p>
+      </div>
+      <div class="grid-dash">
+        <div class="card"><h3>Loại tài khoản</h3><div id="dash-account-types" class="empty">Đang tải…</div></div>
+        <div class="card"><h3>Danh mục giao dịch</h3><div id="dash-categories" class="empty">Đang tải…</div></div>
+        <div class="card"><h3>Cảnh báo đang mở</h3><div id="dash-fraud" class="empty">Đang tải…</div></div>
+      </div>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section class="panel" id="panel-customers">
+      <div class="card">
+        <h3>Tạo khách hàng mới</h3>
+        <form id="form-customer-create" class="grid">
+          <div class="field"><label>Họ tên *</label><input name="full_name" required></div>
+          <div class="field"><label>Email *</label><input name="email" type="email" required></div>
+          <div class="field"><label>Điện thoại</label><input name="phone"></div>
+          <div class="field"><label>Ngày sinh</label><input name="dob" type="date"></div>
+          <div class="field"><label>Quốc gia</label><input name="country" placeholder="VN"></div>
+          <div class="field"><label>Mã người giới thiệu</label><input name="referred_by" type="number" min="1"></div>
+        </form>
+        <div class="row-actions"><button onclick="createCustomer()">Tạo khách hàng</button></div>
+      </div>
+
+      <div class="card">
+        <h3>Tra cứu khách hàng</h3>
+        <div class="toolbar">
+          <div class="field"><label>Email</label><input id="c-search-email" type="email"></div>
+          <div class="field"><label>KYC</label><select id="c-search-kyc"><option value="">-- tất cả --</option><option value="pending">pending (Chờ xác minh)</option><option value="verified">verified (Đã xác minh)</option><option value="rejected">rejected (Bị từ chối)</option></select></div>
+          <button class="secondary" onclick="searchCustomers()">Tìm kiếm</button>
+        </div>
+        <div id="customers-table" class="empty">Chưa có dữ liệu — bấm Tìm kiếm.</div>
+      </div>
+
+      <div class="card">
+        <h3>Chi tiết khách hàng (theo mã)</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã khách hàng</label><input id="c-detail-id" type="number" min="1"></div>
+          <button class="secondary" onclick="loadCustomerDetail()">Xem chi tiết</button>
+        </div>
+        <div id="customer-detail"></div>
+      </div>
+
+      <div class="card">
+        <h3>Cập nhật trạng thái KYC</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã khách hàng</label><input id="c-kyc-id" type="number" min="1"></div>
+          <div class="field"><label>Chuyển sang</label><select id="c-kyc-target">
+            <option value="verified">verified (Đã xác minh)</option>
+            <option value="rejected">rejected (Bị từ chối)</option>
+          </select></div>
+          <button class="warn" onclick="updateKyc()">Cập nhật KYC</button>
+        </div>
+        <div class="hint">
+          <b>Quy tắc 1 chiều, chỉ đổi được đúng 1 lần:</b> chỉ chuyển được <code>pending → verified</code> hoặc <code>pending → rejected</code>.
+          Sau khi đã <code>verified</code>/<code>rejected</code>, <b>không thể đổi lại nữa</b> — kể cả đổi ngược <code>verified ↔ rejected</code>, kể cả đặt lại về <code>pending</code>.
+          Cố thực hiện sẽ nhận lỗi <code>KYC_INVALID_TRANSITION</code>. Đây là chủ đích thiết kế (chống rửa tiền/gian lận danh tính) — không phải giới hạn kỹ thuật.
+        </div>
+        <div id="c-kyc-result"></div>
+      </div>
+
+      <div class="card">
+        <h3>Lịch sử giao dịch của khách hàng</h3>
+        <p class="muted">Gộp giao dịch từ tất cả tài khoản đứng tên khách hàng này, sắp theo thời gian mới nhất. Bấm "Xem chi tiết" ở khối phía trên trước để nạp danh sách tài khoản.</p>
+        <div id="customer-txn-history" class="empty">Chưa có dữ liệu.</div>
+      </div>
+
+      <div class="card">
+        <h3>Theo dõi sổ tiết kiệm của khách hàng</h3>
+        <p class="muted">Gộp mọi sổ tiết kiệm (mở trên bất kỳ tài khoản nào của khách hàng này). Sổ đang <b>active</b> được tính thêm lãi dự thu tới hôm nay và số ngày còn lại tới đáo hạn. Bấm "Xem chi tiết" ở khối phía trên trước.</p>
+        <div id="customer-td-monitor" class="empty">Chưa có dữ liệu.</div>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="panel" id="panel-accounts">
+      <div class="card">
+        <h3>Mở tài khoản mới</h3>
+        <form id="form-account-create" class="grid">
+          <div class="field"><label>Mã khách hàng *</label><input name="customer_id" type="number" min="1" required></div>
+          <div class="field"><label>Loại tài khoản *</label><select name="account_type_id" id="acc-type-select" required></select></div>
+          <div class="field"><label>Tiền tệ</label><input name="currency" placeholder="VND" maxlength="3"></div>
+        </form>
+        <div class="row-actions"><button onclick="createAccount()">Mở tài khoản</button></div>
+      </div>
+
+      <div class="card">
+        <h3>Tra cứu tài khoản (theo mã)</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã tài khoản</label><input id="a-detail-id" type="number" min="1"></div>
+          <button class="secondary" onclick="loadAccountDetail()">Xem</button>
+        </div>
+        <div id="account-detail"></div>
+        <div id="account-cards" class="empty">Chưa có dữ liệu.</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Đổi trạng thái tài khoản</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã tài khoản</label><input id="a-status-id" type="number" min="1"></div>
+            <div class="field"><label>Trạng thái</label><select id="a-status-value">
+              <option value="active">active (Hoạt động)</option>
+              <option value="dormant">dormant (Không hoạt động)</option>
+              <option value="frozen">frozen (Đóng băng)</option>
+              <option value="closed">closed (Đã đóng)</option>
+            </select></div>
+            <button class="secondary" onclick="updateAccountStatus()">Cập nhật</button>
+          </div>
+          <div id="account-status-result"></div>
+        </div>
+        <div class="card">
+          <h3>Phát hành thẻ cho tài khoản</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã tài khoản</label><input id="a-card-account-id" type="number" min="1"></div>
+            <div class="field"><label>Loại thẻ</label><select id="a-card-type">
+              <option value="debit">debit (Ghi nợ)</option>
+              <option value="credit">credit (Tín dụng)</option>
+              <option value="prepaid">prepaid (Trả trước)</option>
+            </select></div>
+            <div class="field"><label>Ngày hết hạn</label><input id="a-card-expiry" type="date"></div>
+            <button class="secondary" onclick="issueCard()">Phát hành</button>
+          </div>
+          <div id="issue-card-result"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Lịch sử số dư / Giao dịch của tài khoản</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã tài khoản</label><input id="a-hist-id" type="number" min="1"></div>
+          <div class="field"><label>Trạng thái</label>
+            <select id="a-hist-status">
+              <option value="">Tất cả</option>
+              <option value="pending">Chờ xử lý</option>
+              <option value="completed">Hoàn tất</option>
+              <option value="failed">Thất bại</option>
+              <option value="reversed">Đã đảo</option>
+            </select>
+          </div>
+          <button class="secondary" onclick="loadBalanceHistory()">Lịch sử số dư</button>
+          <button class="secondary" onclick="loadAccountTransactions()">Danh sách giao dịch</button>
+        </div>
+        <div id="account-history"></div>
+      </div>
+    </section>
+
+    <!-- DEPOSITS (Tiền gửi có kỳ hạn) -->
+    <section class="panel" id="panel-deposits">
+      <div class="card">
+        <h3>Mở sổ tiết kiệm mới</h3>
+        <form id="form-deposit-create" class="grid">
+          <div class="field"><label>Mã tài khoản *</label><input name="account_id" type="number" min="1" required></div>
+          <div class="field"><label>Số tiền gốc *</label><input name="principal_amount" type="text" inputmode="decimal" class="money-input" placeholder="0" required></div>
+          <div class="field"><label>Lãi suất (%/năm) *</label><input name="interest_rate" type="number" step="0.001" min="0" required></div>
+          <div class="field"><label>Kỳ hạn (tháng) *</label><input name="term_months" type="number" min="1" required></div>
+          <div class="field"><label>Phương pháp tính lãi</label><select name="interest_method">
+            <option value="simple">simple (Lãi đơn)</option>
+            <option value="compound">compound (Lãi kép, ghép hàng tháng)</option>
+          </select></div>
+          <div class="field"><label>Kỳ trả lãi</label><select name="payout_method" id="dep-payout-method">
+            <option value="maturity">maturity (Cuối kỳ / đáo hạn)</option>
+            <option value="monthly">monthly (Hàng tháng)</option>
+          </select></div>
+          <div class="field"><label>Cơ sở tính ngày</label><select name="day_count_convention">
+            <option value="actual_365">actual/365</option>
+            <option value="actual_360">actual/360</option>
+          </select></div>
+          <div class="field"><label>Lãi suất không kỳ hạn (%) — rút trước hạn</label><input name="early_withdrawal_rate" type="number" step="0.001" min="0" placeholder="0.20"></div>
+          <div class="field"><label>Ngày mở sổ</label><input name="start_date" type="date"></div>
+          <div class="field" style="display:flex;align-items:center;gap:6px;margin-top:18px;">
+            <input name="auto_renewal" type="checkbox" value="true" style="width:auto;"><label style="margin:0;">Tự động tái tục khi đáo hạn</label>
+          </div>
+        </form>
+        <div class="hint">Mở sổ sẽ trích nộp số tiền gốc từ tài khoản đã chọn. Idempotency-Key tự sinh ngẫu nhiên.</div>
+        <div class="row-actions"><button onclick="withBusyButton(this, createTermDeposit)">Mở sổ tiết kiệm</button></div>
+      </div>
+
+      <div class="card">
+        <h3>Chi tiết sổ tiết kiệm (theo mã)</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã sổ tiết kiệm</label><input id="dep-detail-id" type="number" min="1"></div>
+          <button class="secondary" onclick="loadTermDepositDetail()">Xem chi tiết</button>
+        </div>
+        <div id="deposit-detail"></div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Trả lãi tháng / Rút trước hạn / Đáo hạn</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã sổ tiết kiệm</label><input id="dep-action-id" type="number" min="1" onchange="loadDepositActionInfo()"></div>
+            <div class="field"><label>Ngày xử lý (để trống = hôm nay)</label><input id="dep-action-date" type="date"></div>
+          </div>
+          <div id="dep-action-info"></div>
+          <div class="row-actions">
+            <button class="ok" onclick="withBusyButton(this, postMonthlyInterestUI)">Trả lãi tháng</button>
+            <button class="warn" onclick="withBusyButton(this, withdrawEarlyUI)">Rút trước hạn</button>
+            <button class="danger" onclick="withBusyButton(this, matureUI)">Xử lý đáo hạn</button>
+          </div>
+          <div id="deposit-action-result"></div>
+        </div>
+        <div class="card">
+          <h3>Sổ tiết kiệm theo tài khoản</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã tài khoản</label><input id="dep-by-account-id" type="number" min="1"></div>
+            <button class="secondary" onclick="loadTermDepositsByAccount()">Tra cứu</button>
+          </div>
+          <div id="deposits-by-account"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="panel" id="panel-cards">
+      <div class="card">
+        <h3>Tra cứu thẻ (theo mã)</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã thẻ</label><input id="card-detail-id" type="number" min="1"></div>
+          <button class="secondary" onclick="loadCardDetail()">Xem</button>
+        </div>
+        <div id="card-detail"></div>
+      </div>
+      <div class="card">
+        <h3>Đổi trạng thái thẻ</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã thẻ</label><input id="card-status-id" type="number" min="1"></div>
+          <div class="field"><label>Trạng thái</label><select id="card-status-value">
+            <option value="active">active (Hoạt động)</option>
+            <option value="blocked">blocked (Bị khóa)</option>
+            <option value="expired">expired (Hết hạn)</option>
+          </select></div>
+          <button class="secondary" onclick="updateCardStatus()">Cập nhật</button>
+        </div>
+        <div id="card-status-result"></div>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="panel" id="panel-transactions">
+      <div class="card">
+        <h3>Tạo giao dịch</h3>
+        <form id="form-txn-create" class="grid">
+          <div class="field"><label>Mã tài khoản *</label><input name="account_id" type="number" min="1" required></div>
+          <div class="field"><label>Loại giao dịch *</label>
+            <select name="txn_type" id="txn-type-select">
+              <option value="deposit">deposit (Nộp tiền)</option>
+              <option value="withdrawal">withdrawal (Rút tiền)</option>
+              <option value="transfer">transfer (Chuyển khoản)</option>
+              <option value="payment">payment (Thanh toán)</option>
+              <option value="fee">fee (Phí)</option>
+              <option value="interest">interest (Lãi)</option>
+            </select>
+          </div>
+          <div class="field"><label>Tài khoản liên quan (transfer)</label><input name="related_account_id" type="number" min="1"></div>
+          <div class="field"><label>Danh mục *</label><select name="category_id" id="txn-category-select" required></select></div>
+          <div class="field"><label>Mã thẻ</label><input name="card_id" type="number" min="1"></div>
+          <div class="field"><label>Mã merchant</label><input name="merchant_id" type="number" min="1"></div>
+          <div class="field"><label>Số tiền *</label><input name="amount" type="text" inputmode="decimal" class="money-input" placeholder="0" required></div>
+          <div class="field"><label>Tiền tệ</label><input name="currency" placeholder="VND" maxlength="3"></div>
+          <div class="field"><label>Diễn giải</label><input name="description"></div>
+        </form>
+        <div class="hint">Idempotency-Key sẽ tự sinh ngẫu nhiên cho mỗi lần bấm "Tạo giao dịch".</div>
+        <div class="row-actions"><button onclick="withBusyButton(this, createTransaction)">Tạo giao dịch</button></div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Tra cứu giao dịch (theo mã)</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã giao dịch</label><input id="t-detail-id" type="number" min="1"></div>
+            <button class="secondary" onclick="loadTransactionDetail()">Xem</button>
+          </div>
+          <div id="transaction-detail"></div>
+        </div>
+        <div class="card">
+          <h3>Đảo giao dịch (reverse)</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã giao dịch</label><input id="t-reverse-id" type="number" min="1"></div>
+            <button class="danger" onclick="withBusyButton(this, reverseTransaction)">Đảo giao dịch</button>
+          </div>
+          <div id="transaction-reverse-result"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOANS -->
+    <section class="panel" id="panel-loans">
+      <div class="card">
+        <h3>Tạo khoản vay cho khách hàng</h3>
+        <form id="form-loan-create" class="grid">
+          <div class="field"><label>Mã khách hàng *</label><input name="customer_id" type="number" min="1" required></div>
+          <div class="field"><label>Mã tài khoản giải ngân *</label><input name="account_id" type="number" min="1" required></div>
+          <div class="field"><label>Loại vay</label><input name="loan_type" placeholder="personal / mortgage..."></div>
+          <div class="field"><label>Số tiền gốc *</label><input name="principal_amount" type="text" inputmode="decimal" class="money-input" placeholder="0" required></div>
+          <div class="field"><label>Lãi suất (%) *</label><input name="interest_rate" type="number" step="0.01" min="0" required></div>
+          <div class="field"><label>Kỳ hạn (tháng) *</label><input name="term_months" type="number" min="1" required></div>
+          <div class="field"><label>Ngày giải ngân *</label><input name="disbursed_date" type="date" required></div>
+        </form>
+        <div class="row-actions"><button onclick="withBusyButton(this, createLoan)">Tạo khoản vay</button></div>
+      </div>
+
+      <div class="card">
+        <h3>Tra cứu khoản vay (theo mã)</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã khoản vay</label><input id="l-detail-id" type="number" min="1"></div>
+          <button class="secondary" onclick="loadLoanDetail()">Xem khoản vay</button>
+          <button class="secondary" onclick="loadLoanPayments()">Xem lịch trả nợ</button>
+        </div>
+        <div id="loan-detail"></div>
+        <div id="loan-payments"></div>
+      </div>
+
+      <div class="card">
+        <h3>Thanh toán kỳ trả nợ</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã khoản vay</label><input id="p-loan-id" type="number" min="1"></div>
+          <div class="field"><label>Mã kỳ trả nợ</label><input id="p-payment-id" type="number" min="1"></div>
+          <div class="field"><label>Số tiền trả</label><input id="p-amount" type="text" inputmode="decimal" class="money-input" placeholder="0"></div>
+          <div class="field"><label>Ngày trả</label><input id="p-date" type="date"></div>
+          <button class="ok" onclick="withBusyButton(this, payInstallment)">Thanh toán</button>
+        </div>
+        <div id="pay-installment-result"></div>
+      </div>
+    </section>
+
+    <!-- FRAUD -->
+    <section class="panel" id="panel-fraud">
+      <div class="card">
+        <h3>Danh sách cảnh báo gian lận</h3>
+        <div class="toolbar">
+          <div class="field"><label>Trạng thái</label><select id="f-search-status">
+            <option value="">-- tất cả --</option>
+            <option value="open">open (Đang mở)</option>
+            <option value="reviewing">reviewing (Đang xem xét)</option>
+            <option value="closed_fp">closed_fp (Đóng - báo động giả)</option>
+            <option value="closed_confirmed">closed_confirmed (Đóng - xác nhận)</option>
+          </select></div>
+          <div class="field"><label>Điểm rủi ro tối thiểu</label><input id="f-search-score" type="number" min="0" max="100"></div>
+          <button class="secondary" onclick="searchFraudAlerts()">Tìm kiếm</button>
+        </div>
+        <div id="fraud-table" class="empty">Chưa có dữ liệu — bấm Tìm kiếm.</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Tạo cảnh báo thủ công</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã giao dịch *</label><input id="f-create-txn" type="number" min="1"></div>
+            <div class="field"><label>Điểm rủi ro (0-100) *</label><input id="f-create-score" type="number" min="0" max="100"></div>
+            <div class="field"><label>Loại cảnh báo</label><input id="f-create-type" placeholder="MANUAL_REVIEW"></div>
+            <button class="warn" onclick="createFraudAlert()">Tạo cảnh báo</button>
+          </div>
+          <div id="fraud-create-result"></div>
+        </div>
+        <div class="card">
+          <h3>Cập nhật trạng thái cảnh báo</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã cảnh báo</label><input id="f-status-id" type="number" min="1"></div>
+            <div class="field"><label>Trạng thái mới</label><select id="f-status-value">
+              <option value="reviewing">reviewing (Đang xem xét)</option>
+              <option value="closed_fp">closed_fp (Đóng - báo động giả)</option>
+              <option value="closed_confirmed">closed_confirmed (Đóng - xác nhận)</option>
+            </select></div>
+            <button class="secondary" onclick="updateFraudStatus()">Cập nhật</button>
+          </div>
+          <div id="fraud-status-result"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GENERAL LEDGER -->
+    <section class="panel" id="panel-gl">
+      <div class="card">
+        <h3>Bảng cân đối thử (Trial Balance)</h3>
+        <div class="row-actions"><button class="secondary" onclick="loadTrialBalance()">Tải lại</button></div>
+        <div id="gl-trial-balance" class="empty">Bấm "Tải lại" để xem.</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Sổ cái theo tài khoản kế toán</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã tài khoản kế toán</label><input id="gl-account-code" placeholder="2000"></div>
+            <button class="secondary" onclick="loadGlAccountLedger()">Xem sổ cái</button>
+          </div>
+          <div id="gl-account-entries"></div>
+        </div>
+        <div class="card">
+          <h3>Bút toán theo giao dịch (audit trail)</h3>
+          <div class="toolbar">
+            <div class="field"><label>Mã giao dịch</label><input id="gl-txn-id" type="number" min="1"></div>
+            <button class="secondary" onclick="loadGlTransactionEntries()">Xem bút toán</button>
+          </div>
+          <div id="gl-txn-entries"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAKER-CHECKER -->
+    <section class="panel" id="panel-authqueue">
+      <div class="card">
+        <h3>Người dùng nội bộ demo</h3>
+        <p class="muted">Đăng nhập thật bằng JWT (mật khẩu demo cho cả 5 user: <b>Demo@123</b>). Vì cần mô phỏng 2 người thao tác trong cùng 1 trình duyệt, panel này có 2 ô đăng nhập độc lập: 1 cho vai trò Maker, 1 cho vai trò Checker.</p>
+        <div id="authq-users" class="empty">Đang tải…</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Đăng nhập — Maker</h3>
+          <div class="toolbar">
+            <div class="field"><label>Tên đăng nhập</label><input id="authq-maker-username" placeholder="teller1"></div>
+            <div class="field"><label>Mật khẩu</label><input id="authq-maker-password" type="password" placeholder="Demo@123"></div>
+            <button class="secondary" onclick="loginAs('maker')">Đăng nhập</button>
+          </div>
+          <div id="authq-maker-session" class="empty">Chưa đăng nhập.</div>
+        </div>
+        <div class="card">
+          <h3>Đăng nhập — Checker</h3>
+          <div class="toolbar">
+            <div class="field"><label>Tên đăng nhập</label><input id="authq-checker-username" placeholder="supervisor1"></div>
+            <div class="field"><label>Mật khẩu</label><input id="authq-checker-password" type="password" placeholder="Demo@123"></div>
+            <button class="secondary" onclick="loginAs('checker')">Đăng nhập</button>
+          </div>
+          <div id="authq-checker-session" class="empty">Chưa đăng nhập.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Nhập lệnh mới (Maker)</h3>
+        <div class="grid">
+          <div class="field"><label>Loại nghiệp vụ *</label>
+            <select id="authq-op-type" onchange="fillExamplePayload()">
+              <option value="CREATE_TRANSACTION">CREATE_TRANSACTION — Tạo giao dịch</option>
+              <option value="UPDATE_ACCOUNT_STATUS">UPDATE_ACCOUNT_STATUS — Đổi trạng thái tài khoản</option>
+              <option value="OPEN_TERM_DEPOSIT">OPEN_TERM_DEPOSIT — Mở sổ tiết kiệm</option>
+              <option value="WITHDRAW_TERM_DEPOSIT_EARLY">WITHDRAW_TERM_DEPOSIT_EARLY — Rút sổ trước hạn</option>
+              <option value="MATURE_TERM_DEPOSIT">MATURE_TERM_DEPOSIT — Xử lý đáo hạn sổ</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label>Payload (JSON) *</label>
+          <textarea id="authq-payload" rows="5" style="width:100%;font-family:Consolas,monospace;font-size:12.5px;padding:8px;border:1px solid var(--border);border-radius:2px;"></textarea>
+        </div>
+        <div class="hint">Cần đăng nhập Maker ở trên trước. Bấm "Điền mẫu" để lấy payload mẫu theo loại nghiệp vụ đang chọn, sửa lại giá trị (account_id, amount...) cho khớp dữ liệu thật của bạn.</div>
+        <div class="row-actions">
+          <button class="secondary" onclick="fillExamplePayload()">Điền mẫu</button>
+          <button onclick="submitAuthQueue()">Nộp lệnh vào hàng đợi</button>
+        </div>
+        <div id="authq-submit-result"></div>
+      </div>
+
+      <div class="card">
+        <h3>Hàng đợi chờ duyệt</h3>
+        <div class="toolbar">
+          <div class="field"><label>Trạng thái</label><select id="authq-search-status">
+            <option value="pending">pending (Đang chờ)</option>
+            <option value="">-- tất cả --</option>
+            <option value="authorized">authorized (Đã duyệt)</option>
+            <option value="rejected">rejected (Đã từ chối)</option>
+          </select></div>
+          <button class="secondary" onclick="searchAuthQueue()">Tải danh sách</button>
+        </div>
+        <div id="authq-table" class="empty">Chưa có dữ liệu — bấm Tải danh sách.</div>
+      </div>
+
+      <div class="card">
+        <h3>Duyệt / Từ chối theo mã</h3>
+        <div class="toolbar">
+          <div class="field"><label>Mã hàng đợi</label><input id="authq-action-id" type="number" min="1"></div>
+          <div class="field"><label>Lý do (nếu từ chối)</label><input id="authq-reject-reason" placeholder="Nghi ngờ gian lận..."></div>
+        </div>
+        <div class="hint">Dùng phiên đăng nhập Checker ở trên — checker phải khác maker đã nộp lệnh.</div>
+        <div class="row-actions">
+          <button class="secondary" onclick="loadAuthQueueDetail()">Xem chi tiết</button>
+          <button class="ok" onclick="authorizeQueue()">Phê duyệt</button>
+          <button class="danger" onclick="rejectQueue()">Từ chối</button>
+        </div>
+        <div id="authq-detail"></div>
+      </div>
+    </section>
+
+    <!-- CLOSE OF BUSINESS -->
+    <section class="panel" id="panel-cob">
+      <div class="card">
+        <h3>Chạy batch cuối ngày (Close of Business)</h3>
+        <p class="muted">T24 thật chạy COB tự động mỗi đêm. Ở đây trigger thủ công — sẽ: (1) tự động đáo hạn mọi sổ tiết kiệm đã tới/qua hạn, (2) rà soát khoản vay quá hạn &gt; 90 ngày và chuyển sang trạng thái nợ xấu (defaulted).</p>
+        <div class="toolbar">
+          <div class="field"><label>Ngày xử lý (để trống = hôm nay)</label><input id="cob-as-of" type="date"></div>
+          <button class="danger" onclick="runCob()">Chạy COB ngay</button>
+        </div>
+        <div id="cob-run-result"></div>
+      </div>
+
+      <div class="card">
+        <h3>Lịch sử các lần chạy</h3>
+        <div class="row-actions"><button class="secondary" onclick="loadCobHistory()">Tải lại</button></div>
+        <div id="cob-history" class="empty">Bấm "Tải lại" để xem.</div>
+      </div>
+    </section>
+
+    <!-- REFDATA -->
+    <section class="panel" id="panel-refdata">
+      <div class="split">
+        <div class="card">
+          <h3>Loại tài khoản</h3>
+          <div id="ref-account-types" class="empty">Đang tải…</div>
+          <div class="toolbar" style="margin-top:12px;">
+            <div class="field"><label>Tên loại</label><input id="rt-name" placeholder="Savings"></div>
+            <div class="field"><label>Lãi suất (%)</label><input id="rt-rate" type="number" step="0.01" min="0"></div>
+            <button class="secondary" onclick="createAccountType()">Thêm loại tài khoản</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Danh mục giao dịch</h3>
+          <div id="ref-categories" class="empty">Đang tải…</div>
+        </div>
+      </div>
+      <div class="split">
+        <div class="card">
+          <h3>Merchant</h3>
+          <div id="ref-merchants" class="empty">Đang tải…</div>
+          <div class="row-actions"><button class="secondary" onclick="loadMerchants()">Tải lại</button></div>
+        </div>
+        <div class="card">
+          <h3>Tỷ giá hối đoái</h3>
+          <div class="toolbar">
+            <div class="field"><label>Từ</label><input id="fx-from" maxlength="3" placeholder="USD"></div>
+            <div class="field"><label>Đến</label><input id="fx-to" maxlength="3" placeholder="VND"></div>
+            <div class="field"><label>Ngày</label><input id="fx-date" type="date"></div>
+            <button class="secondary" onclick="lookupFx()">Tra cứu</button>
+          </div>
+          <div id="fx-lookup-result"></div>
+          <div class="toolbar" style="margin-top:10px;">
+            <div class="field"><label>Tỷ giá (rate)</label><input id="fx-rate" type="number" step="0.000001" min="0"></div>
+            <button class="secondary" onclick="createFx()">Tạo tỷ giá mới</button>
+          </div>
+          <div id="fx-create-result"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Quy đổi ngoại tệ giữa 2 tài khoản</h3>
+        <p class="muted">Chỉ hỗ trợ cặp có 1 chân là VND. Cần đã có tỷ giá as-of (tạo ở khối bên trên) cho đúng ngày quy đổi.</p>
+        <div class="toolbar">
+          <div class="field"><label>Từ tài khoản</label><input id="fxconv-from" type="number" min="1"></div>
+          <div class="field"><label>Đến tài khoản</label><input id="fxconv-to" type="number" min="1"></div>
+          <div class="field"><label>Số tiền (theo tiền tệ TK nguồn)</label><input id="fxconv-amount" type="text" inputmode="decimal" class="money-input" placeholder="0"></div>
+          <div class="field"><label>Ngày tỷ giá (để trống = hôm nay)</label><input id="fxconv-date" type="date"></div>
+          <button onclick="withBusyButton(this, convertFx)">Quy đổi</button>
+        </div>
+        <div id="fxconv-result"></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+const API = "/api/v1";
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function updateClock(){
+  const d = new Date();
+  document.getElementById("sysclock").textContent =
+    d.toLocaleDateString("vi-VN") + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+function toast(msg, ok=true){
+  const el = document.createElement("div");
+  el.className = "toast-item " + (ok === "warn" ? "warn" : (ok ? "ok" : "err"));
+  el.textContent = msg;
+  document.getElementById("toast").appendChild(el);
+  setTimeout(()=>el.remove(), ok === "warn" ? 6500 : 4200);
+}
+
+async function api(method, path, body, headers){
+  let res, json;
+  try{
+    res = await fetch(API + path, {
+      method,
+      headers: { "Content-Type": "application/json", ...(headers||{}) },
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    json = await res.json();
+  }catch(e){
+    toast("Không thể kết nối server: " + e.message, false);
+    throw e;
+  }
+  if(!res.ok || json.status === "ERROR"){
+    const msg = json?.error?.message || ("HTTP " + res.status);
+    toast(msg, false);
+    throw new Error(msg);
+  }
+  return json;
+}
+
+function uuid(){
+  return crypto.randomUUID ? crypto.randomUUID() : "key-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+}
+
+// Khoá nút trong lúc request đang bay: tránh 2 click gần như đồng thời cùng lọt qua trước khi
+// idempotency record kịp lưu (race hiếm nhưng có thật, vì check-rồi-lưu không nằm trong 1
+// transaction khoá hàng). Không phải cơ chế chống trùng chính — xem idemKey() bên dưới.
+async function withBusyButton(btn, fn){
+  if(btn.disabled) return;
+  btn.disabled = true;
+  try{
+    await fn();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Đúng bản chất Idempotency-Key: key phải ỔN ĐỊNH theo payload, không sinh mới mỗi lần bấm.
+// Cùng 1 scope (1 hành động) + cùng 1 payload -> luôn trả lại đúng 1 key, nên bấm lại bao nhiêu
+// lần trước khi có kết quả cũng chỉ tạo đúng 1 bản ghi thật (server tự dedupe theo key này).
+// Sau khi request THÀNH CÔNG, key bị xoá khỏi bộ nhớ — lần tạo tiếp theo (dù payload giống hệt,
+// vì người dùng cố ý tạo thêm 1 giao dịch mới) sẽ nhận key mới, không bị đối xử như bản trùng.
+// Nếu payload đổi trước khi thành công, cũng tự nhận key mới (không tái dùng key cũ cho nội dung
+// khác — tránh lỗi IDEMPOTENCY_KEY_CONFLICT phía server).
+const _idemKeys = new Map();
+function idemKey(scope, body){
+  const bodyStr = JSON.stringify(body ?? {});
+  const existing = _idemKeys.get(scope);
+  if(existing && existing.bodyStr === bodyStr) return existing.key;
+  const key = uuid();
+  _idemKeys.set(scope, {key, bodyStr});
+  return key;
+}
+function idemDone(scope){
+  _idemKeys.delete(scope);
+}
+
+function fmtMoney(v){
+  if(v === null || v === undefined || v === "") return "-";
+  const n = Number(v);
+  if(Number.isNaN(n)) return v;
+  return n.toLocaleString("vi-VN", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Nhãn tiếng Việt cho tên trường (key) trả về từ API, dùng ở renderKV
+const FIELD_LABELS = {
+  customer_id:"Mã khách hàng", full_name:"Họ tên", email:"Email", phone:"Điện thoại",
+  dob:"Ngày sinh", country:"Quốc gia", kyc_status:"Trạng thái KYC", referred_by:"Người giới thiệu",
+  created_at:"Ngày tạo", updated_at:"Cập nhật lần cuối",
+  account_id:"Mã tài khoản", account_type_id:"Loại tài khoản", account_number:"Số tài khoản",
+  currency:"Tiền tệ", balance:"Số dư", status:"Trạng thái", opened_at:"Ngày mở", closed_at:"Ngày đóng",
+  card_id:"Mã thẻ", card_type:"Loại thẻ", expiry_date:"Ngày hết hạn",
+  transaction_id:"Mã giao dịch", related_account_id:"Tài khoản liên quan", merchant_id:"Mã merchant",
+  category_id:"Mã danh mục", txn_type:"Loại giao dịch", amount:"Số tiền", description:"Diễn giải",
+  txn_timestamp:"Thời gian giao dịch",
+  loan_id:"Mã khoản vay", loan_type:"Loại vay", principal_amount:"Số tiền gốc", interest_rate:"Lãi suất (%)",
+  term_months:"Kỳ hạn (tháng)", disbursed_date:"Ngày giải ngân", outstanding_principal:"Dư nợ gốc còn lại",
+  payment_id:"Mã kỳ trả nợ", due_date:"Hạn trả", amount_due:"Số tiền phải trả",
+  amount_paid:"Số tiền đã trả", paid_date:"Ngày đã trả",
+  alert_id:"Mã cảnh báo", risk_score:"Điểm rủi ro", alert_type:"Loại cảnh báo",
+  currency_from:"Tiền tệ gốc", currency_to:"Tiền tệ đích", rate:"Tỷ giá", rate_date:"Ngày áp dụng",
+  type_name:"Tên loại tài khoản", merchant_name:"Tên merchant", category:"Ngành hàng",
+  category_name:"Tên danh mục", category_group:"Nhóm danh mục",
+  term_deposit_id:"Mã sổ tiết kiệm", interest_method:"Phương pháp tính lãi", payout_method:"Kỳ trả lãi",
+  day_count_convention:"Cơ sở tính ngày", early_withdrawal_rate:"Lãi suất không kỳ hạn (%)",
+  auto_renewal:"Tự động tái tục", start_date:"Ngày mở sổ", maturity_date:"Ngày đáo hạn",
+  renewed_from_id:"Tái tục từ sổ", closed_date:"Ngày đóng sổ",
+  posting_id:"Mã ghi nhận lãi", posting_type:"Loại ghi nhận", period_from:"Từ ngày", period_to:"Đến ngày",
+  days:"Số ngày", interest_amount:"Số tiền lãi", accrued_interest:"Lãi dự thu (chưa hạch toán)",
+  days_elapsed:"Số ngày đã gửi", as_of:"Tính đến ngày", deposit:"Sổ tiết kiệm", posting:"Lần ghi nhận lãi",
+  renewed:"Sổ tái tục mới",
+  gl_account_id:"Mã TK kế toán", code:"Mã TK kế toán", name:"Tên tài khoản", account_class:"Loại tài khoản",
+  normal_balance:"Số dư bình thường", gl_entry_id:"Mã bút toán", entry_side:"Bên Nợ/Có", entry_date:"Ngày hạch toán",
+  total_debit:"Tổng Nợ", total_credit:"Tổng Có", balanced:"Cân bằng", account_code:"Mã TK", account_name:"Tên TK",
+  queue_id:"Mã hàng đợi", operation_type:"Loại nghiệp vụ", payload:"Dữ liệu yêu cầu (payload)",
+  maker_id:"Mã maker (người nhập)", checker_id:"Mã checker (người duyệt)", input_at:"Thời gian nhập lệnh",
+  decided_at:"Thời gian quyết định", reject_reason:"Lý do từ chối", result:"Kết quả thực thi",
+  user_id:"Mã người dùng", username:"Tên đăng nhập", display_name:"Họ tên", role:"Vai trò",
+  cob_run_id:"Mã lần chạy", run_date:"Ngày xử lý", started_at:"Bắt đầu", finished_at:"Kết thúc",
+  term_deposits_matured:"Số sổ đã đáo hạn", loans_marked_defaulted:"Số khoản vay chuyển nợ xấu",
+  errors_count:"Số lỗi", details:"Chi tiết",
+  from_transaction:"Giao dịch bên nguồn", to_transaction:"Giao dịch bên đích", to_amount:"Số tiền quy đổi được",
+};
+
+const AUTHQ_OP_LABELS = {
+  CREATE_TRANSACTION:"Tạo giao dịch", UPDATE_ACCOUNT_STATUS:"Đổi trạng thái tài khoản",
+  OPEN_TERM_DEPOSIT:"Mở sổ tiết kiệm", WITHDRAW_TERM_DEPOSIT_EARLY:"Rút sổ trước hạn", MATURE_TERM_DEPOSIT:"Xử lý đáo hạn sổ",
+};
+const ROLE_LABELS = { maker:"Maker (nhập lệnh)", checker:"Checker (duyệt lệnh)", both:"Cả hai", admin:"Quản trị" };
+
+const GL_CLASS_LABELS = { asset:"Tài sản", liability:"Nợ phải trả", equity:"Vốn chủ sở hữu", income:"Thu nhập", expense:"Chi phí" };
+const GL_SIDE_LABELS = { debit:"Nợ", credit:"Có" };
+
+const TD_POSTING_TYPE_LABELS = {
+  monthly_payout:"Trả lãi tháng", maturity_settlement:"Tất toán đáo hạn", early_withdrawal_settlement:"Rút trước hạn",
+};
+
+const ENUM_VALUE_LABELS = {
+  simple:"Lãi đơn", compound:"Lãi kép (ghép hàng tháng)",
+  maturity:"Cuối kỳ / đáo hạn", monthly:"Hàng tháng",
+  actual_365:"actual/365", actual_360:"actual/360",
+};
+
+// Nhãn tiếng Việt cho các giá trị trạng thái (enum), hiển thị trong badge — mã gốc giữ trong tooltip
+const STATUS_LABELS = {
+  pending:"Chờ xử lý", verified:"Đã xác minh", rejected:"Từ chối",
+  active:"Hoạt động", dormant:"Không hoạt động", frozen:"Đóng băng", closed:"Đã đóng",
+  blocked:"Bị khóa", expired:"Hết hạn",
+  completed:"Hoàn tất", reversed:"Đã đảo", failed:"Thất bại",
+  deposit:"Nộp tiền", withdrawal:"Rút tiền", transfer:"Chuyển khoản", payment:"Thanh toán", fee:"Phí", interest:"Lãi",
+  open:"Đang mở", reviewing:"Đang xem xét", closed_fp:"Đóng (báo giả)", closed_confirmed:"Đóng (xác nhận)",
+  matured:"Đã đáo hạn", withdrawn:"Đã rút trước hạn", authorized:"Đã duyệt", defaulted:"Nợ xấu (quá hạn)",
+};
+
+function badge(v){
+  if(v === null || v === undefined || v === "") return "-";
+  const label = STATUS_LABELS[v] || v;
+  return `<span class="badge b-${v}" title="${v}">${label}</span>`;
+}
+
+function formValues(formEl){
+  const out = {};
+  new FormData(formEl).forEach((v,k)=>{ if(v !== "") out[k] = v; });
+  formEl.querySelectorAll(".money-input").forEach(el=>{
+    if(el.name && out[el.name] !== undefined) out[el.name] = unformatMoney(out[el.name]);
+  });
+  return out;
+}
+
+// ---- Validate phía client ----
+// Các thuộc tính HTML required/min trên input CHỈ có tác dụng khi form được submit theo
+// kiểu native (<button type="submit"> bên trong <form>) — nút bấm trong app này nằm NGOÀI
+// thẻ <form> và gọi thẳng JS qua onclick, nên required/min chỉ là trang trí, không hề được
+// trình duyệt kiểm tra. Bộ hàm dưới đây validate thật trước khi gọi API, mirror đúng rule
+// backend (Zod schema + business rule trong service) để báo lỗi ngay tại chỗ, không cần round-trip.
+function clearFieldErrors(formEl){
+  formEl.querySelectorAll(".field.has-error").forEach(f=>f.classList.remove("has-error"));
+  formEl.querySelectorAll(".field-error").forEach(e=>e.remove());
+}
+function setFieldError(formEl, fieldName, msg){
+  const input = formEl.elements[fieldName];
+  if(!input) return;
+  const field = input.closest(".field");
+  if(!field) return;
+  field.classList.add("has-error");
+  const err = document.createElement("div");
+  err.className = "field-error";
+  err.textContent = msg;
+  field.appendChild(err);
+}
+function applyFieldErrors(formEl, errors){
+  clearFieldErrors(formEl);
+  const keys = Object.keys(errors);
+  keys.forEach(k => setFieldError(formEl, k, errors[k]));
+  if(keys.length) toast("Vui lòng kiểm tra lại các trường được đánh dấu đỏ", false);
+  return keys.length === 0;
+}
+function isPositiveIntStr(v){
+  return /^\d+$/.test(String(v ?? "").trim()) && Number(v) > 0;
+}
+function isMoneyAmountStr(v){
+  return /^\d+(\.\d{1,2})?$/.test(String(v ?? "").trim()) && Number(v) > 0;
+}
+
+// Ô nhập số tiền: hiển thị phân cách hàng nghìn khi gõ (chuẩn vi-VN: chấm hàng nghìn,
+// phẩy thập phân — khớp với cách fmtMoney() hiển thị số tiền ở mọi bảng/kết quả khác).
+// unformatMoney() đảo ngược lại thành chuỗi số thuần (vd "1.234,5" -> "1234.5") trước khi gửi API.
+function unformatMoney(v){
+  if(v === undefined || v === null || v === "") return v;
+  return String(v).replace(/\./g, "").replace(",", ".");
+}
+
+function formatMoneyInputValue(raw){
+  let cleaned = raw.replace(/[^\d,]/g, "");
+  const firstComma = cleaned.indexOf(",");
+  if(firstComma !== -1){
+    cleaned = cleaned.slice(0, firstComma + 1) + cleaned.slice(firstComma + 1).replace(/,/g, "");
+  }
+  const [intPartRaw, decPart] = cleaned.split(",");
+  const intPart = (intPartRaw || "").replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return decPart !== undefined ? `${intPart},${decPart.slice(0,2)}` : intPart;
+}
+
+// Tự xoá lỗi inline của 1 field ngay khi người dùng sửa nó, thay vì đợi tới lần bấm submit
+// tiếp theo mới re-validate — áp dụng chung cho mọi form dùng setFieldError()/applyFieldErrors().
+function attachInlineErrorClearing(){
+  const clear = (e) => {
+    const field = e.target.closest && e.target.closest(".field.has-error");
+    if(!field) return;
+    field.classList.remove("has-error");
+    const err = field.querySelector(".field-error");
+    if(err) err.remove();
+  };
+  document.addEventListener("input", clear);
+  document.addEventListener("change", clear);
+}
+
+function attachMoneyFormatting(){
+  document.querySelectorAll(".money-input").forEach(el=>{
+    el.addEventListener("input", ()=>{
+      const digitsBeforeCursor = el.value.slice(0, el.selectionStart).replace(/[^\d,]/g, "").length;
+      el.value = formatMoneyInputValue(el.value);
+      let seen = 0, pos = el.value.length;
+      for(let i=0;i<el.value.length;i++){
+        if(/[\d,]/.test(el.value[i])) seen++;
+        if(seen === digitsBeforeCursor){ pos = i+1; break; }
+      }
+      el.setSelectionRange(pos, pos);
+    });
+  });
+}
+
+function renderTable(rows, columns){
+  if(!rows || rows.length === 0) return `<div class="empty">Không có dữ liệu.</div>`;
+  const head = columns.map(c=>`<th>${c.label}</th>`).join("");
+  const body = rows.map(r=>{
+    const cells = columns.map(c=>`<td>${c.render ? c.render(r[c.key], r) : (r[c.key] ?? "-")}</td>`).join("");
+    return `<tr>${cells}</tr>`;
+  }).join("");
+  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function renderKV(obj){
+  if(!obj) return `<div class="empty">Không tìm thấy.</div>`;
+  const rows = Object.entries(obj).map(([k,v])=>{
+    let val = v;
+    if(typeof v === "boolean") val = v ? "Có" : "Không";
+    else if(v && typeof v === "object") val = `<pre class="mono" style="white-space:pre-wrap;margin:0;">${JSON.stringify(v,null,2)}</pre>`;
+    else if(["status","kyc_status","txn_type"].includes(k)) val = badge(v);
+    else if(["interest_method","payout_method","day_count_convention"].includes(k)) val = ENUM_VALUE_LABELS[v] || v;
+    else if(k === "account_class") val = GL_CLASS_LABELS[v] || v;
+    else if(k === "normal_balance" || k === "entry_side") val = GL_SIDE_LABELS[v] || v;
+    else if(k === "total_debit" || k === "total_credit") val = fmtMoney(v);
+    else if(k.includes("amount") || k === "balance" || k === "principal_amount" || k === "outstanding_principal") val = fmtMoney(v);
+    const label = FIELD_LABELS[k] || k;
+    return `<div class="k">${label}</div><div>${val ?? "-"}</div>`;
+  }).join("");
+  return `<div class="kv-wrap"><div class="kv">${rows}</div></div>`;
+}
+
+// ---- Nav ----
+document.querySelectorAll(".nav-item").forEach(el=>{
+  el.addEventListener("click", ()=>{
+    document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    el.classList.add("active");
+    const key = el.dataset.panel;
+    document.getElementById("panel-" + key).classList.add("active");
+    document.getElementById("panel-title").textContent = el.textContent;
+    document.getElementById("crumb").textContent = "FINCORE › " + el.textContent.toUpperCase();
+  });
+});
+
+// ---- Reference data (shared) ----
+let ACCOUNT_TYPES = [];
+let CATEGORIES = [];
+
+async function loadRefData(){
+  try{
+    const at = await api("GET", "/account-types");
+    ACCOUNT_TYPES = at.data;
+    document.getElementById("acc-type-select").innerHTML =
+      ACCOUNT_TYPES.map(t=>`<option value="${t.account_type_id}">${t.type_name} (${t.interest_rate}%)</option>`).join("");
+    document.getElementById("dash-account-types").innerHTML = renderTable(ACCOUNT_TYPES, [
+      {key:"account_type_id", label:"Mã"}, {key:"type_name", label:"Tên"}, {key:"interest_rate", label:"Lãi suất %"}
+    ]);
+    document.getElementById("ref-account-types").innerHTML = document.getElementById("dash-account-types").innerHTML;
+
+    const cat = await api("GET", "/transaction-categories");
+    CATEGORIES = cat.data;
+    document.getElementById("txn-category-select").innerHTML =
+      CATEGORIES.map(c=>`<option value="${c.category_id}">${c.category_name} (${c.category_group})</option>`).join("");
+    document.getElementById("dash-categories").innerHTML = renderTable(CATEGORIES, [
+      {key:"category_id", label:"Mã"}, {key:"category_name", label:"Tên"}, {key:"category_group", label:"Nhóm"}
+    ]);
+    document.getElementById("ref-categories").innerHTML = document.getElementById("dash-categories").innerHTML;
+
+    const fraud = await api("GET", "/fraud-alerts?status=open&size=10");
+    document.getElementById("dash-fraud").innerHTML = renderTable(fraud.data, [
+      {key:"alert_id", label:"Mã"}, {key:"transaction_id", label:"Mã GD"}, {key:"risk_score", label:"Điểm RR"},
+      {key:"alert_type", label:"Loại"}, {key:"status", label:"TT", render: badge}
+    ]);
+  }catch(e){ /* toast already shown */ }
+}
+loadRefData();
+loadMerchants();
+attachMoneyFormatting();
+attachInlineErrorClearing();
+
+// ---- Customers ----
+function isValidEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || "").trim());
+}
+
+// Mirror đúng createCustomerBody (Zod) + business rule trong customerService.create()
+// (src/services/customerService.ts:7-17): email phải duy nhất, referred_by (nếu có) phải
+// là khách hàng có thật.
+async function validateCustomerCreateForm(formEl){
+  const el = formEl.elements;
+  const errors = {};
+  if(!el.full_name.value.trim()) errors.full_name = "Bắt buộc nhập họ tên";
+  if(!isValidEmail(el.email.value)) errors.email = "Bắt buộc, phải đúng định dạng email";
+  if(el.referred_by.value && !isPositiveIntStr(el.referred_by.value)) errors.referred_by = "Phải là số nguyên dương";
+
+  if(!errors.email){
+    const existing = await api("GET", `/customers?email=${encodeURIComponent(el.email.value.trim())}&size=1`).catch(() => null);
+    if(existing && existing.data.length) errors.email = "Email này đã được dùng bởi khách hàng khác";
+  }
+  if(el.referred_by.value && !errors.referred_by){
+    const ref = await api("GET", `/customers/${el.referred_by.value}`).catch(() => null);
+    if(!ref) errors.referred_by = "Không tìm thấy khách hàng này để làm người giới thiệu";
+  }
+  return errors;
+}
+
+async function createCustomer(){
+  const formEl = document.getElementById("form-customer-create");
+  if(!applyFieldErrors(formEl, await validateCustomerCreateForm(formEl))) return;
+  const body = formValues(formEl);
+  const res = await api("POST", "/customers", body);
+  toast("Tạo khách hàng thành công: #" + res.data.customer_id);
+  formEl.reset();
+  clearFieldErrors(formEl);
+  document.getElementById("c-detail-id").value = res.data.customer_id;
+  loadCustomerDetail();
+}
+
+async function searchCustomers(){
+  const email = document.getElementById("c-search-email").value;
+  const kyc = document.getElementById("c-search-kyc").value;
+  const qs = new URLSearchParams({size:"50"});
+  if(email) qs.set("email", email);
+  if(kyc) qs.set("kyc_status", kyc);
+  const res = await api("GET", "/customers?" + qs.toString());
+  document.getElementById("customers-table").innerHTML = renderTable(res.data, [
+    {key:"customer_id", label:"Mã"}, {key:"full_name", label:"Họ tên"}, {key:"email", label:"Email"},
+    {key:"phone", label:"SĐT"}, {key:"kyc_status", label:"KYC", render: badge}, {key:"country", label:"QG"}
+  ]);
+}
+
+async function loadCustomerDetail(){
+  const id = document.getElementById("c-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã khách hàng hợp lệ (số nguyên dương)", false);
+  const [cust, accounts] = await Promise.all([
+    api("GET", `/customers/${id}`),
+    api("GET", `/customers/${id}/accounts`).catch(()=>({data:[]}))
+  ]);
+  let html = renderKV(cust.data);
+  html += `<div class="card"><h3>Tài khoản của khách hàng</h3>` +
+    renderTable(accounts.data, [
+      {key:"account_id", label:"Mã"}, {key:"account_number", label:"Số TK"}, {key:"account_type_id", label:"Loại"},
+      {key:"balance", label:"Số dư", render: fmtMoney}, {key:"currency", label:"Tiền tệ"}, {key:"status", label:"TT", render: badge}
+    ]) + `</div>`;
+  document.getElementById("customer-detail").innerHTML = html;
+
+  // Gộp lịch sử giao dịch từ mọi tài khoản của khách hàng, sắp theo thời gian mới nhất.
+  document.getElementById("customer-txn-history").innerHTML = `<div class="empty">Đang tải…</div>`;
+  const accountNumberById = {};
+  accounts.data.forEach(a => accountNumberById[a.account_id] = a.account_number);
+  const perAccount = await Promise.all(
+    accounts.data.map(a => api("GET", `/accounts/${a.account_id}/transactions?size=100`).catch(() => ({data:[]})))
+  );
+  const allTxns = perAccount.flatMap(r => r.data)
+    .sort((a,b) => new Date(b.txn_timestamp) - new Date(a.txn_timestamp));
+  document.getElementById("customer-txn-history").innerHTML = renderTable(allTxns, [
+    {key:"transaction_id", label:"Mã GD"},
+    {key:"account_id", label:"Số TK", render: v => accountNumberById[v] || v},
+    {key:"txn_type", label:"Loại", render: badge},
+    {key:"amount", label:"Số tiền", render: fmtMoney},
+    {key:"currency", label:"Tiền tệ"},
+    {key:"status", label:"TT", render: badge},
+    {key:"description", label:"Diễn giải"},
+    {key:"txn_timestamp", label:"Thời gian"}
+  ]);
+
+  // Theo dõi sổ tiết kiệm: gộp mọi sổ của khách hàng, sổ active thì tính thêm lãi dự thu.
+  document.getElementById("customer-td-monitor").innerHTML = `<div class="empty">Đang tải…</div>`;
+  const tdRes = await api("GET", `/customers/${id}/term-deposits?size=100`).catch(() => ({data:[]}));
+  const deposits = tdRes.data;
+  const accrualByTdId = {};
+  await Promise.all(deposits.filter(d => d.status === "active").map(async d => {
+    const info = await api("GET", `/term-deposits/${d.term_deposit_id}/accrued-interest`).catch(() => null);
+    if(info) accrualByTdId[d.term_deposit_id] = info.data;
+  }));
+  const daysRemaining = (maturityDate, status) => {
+    if(status !== "active") return "-";
+    const diff = Math.ceil((new Date(maturityDate) - new Date(new Date().toISOString().slice(0,10))) / 86400000);
+    return diff >= 0 ? diff + " ngày" : "Đã quá hạn";
+  };
+  document.getElementById("customer-td-monitor").innerHTML = renderTable(deposits, [
+    {key:"term_deposit_id", label:"Mã sổ"},
+    {key:"account_id", label:"Số TK", render: v => accountNumberById[v] || v},
+    {key:"principal_amount", label:"Gốc", render: fmtMoney},
+    {key:"interest_rate", label:"Lãi suất", render: v => v + "%/năm"},
+    {key:"term_months", label:"Kỳ hạn", render: v => v + " tháng"},
+    {key:"start_date", label:"Ngày mở"},
+    {key:"maturity_date", label:"Ngày đáo hạn"},
+    {key:"status", label:"TT", render: badge},
+    {key:"term_deposit_id", label:"Lãi dự thu", render: v => accrualByTdId[v] ? fmtMoney(accrualByTdId[v].accrued_interest) : "-"},
+    {key:"maturity_date", label:"Còn lại", render: (v, row) => daysRemaining(v, row.status)}
+  ]);
+}
+
+// Mirror đúng rule 1 chiều trong customerService.updateKyc() (src/services/customerService.ts:38-51):
+// chỉ chuyển được khi đang 'pending', và không bao giờ đặt lại được về 'pending'.
+async function updateKyc(){
+  const id = document.getElementById("c-kyc-id").value;
+  const kyc_status = document.getElementById("c-kyc-target").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã khách hàng hợp lệ (số nguyên dương)", false);
+  const cust = await api("GET", `/customers/${id}`).catch(() => null);
+  if(!cust) return toast("Không tìm thấy khách hàng #" + id, false);
+  if(cust.data.kyc_status !== "pending"){
+    return toast(`Khách hàng #${id} đã ở trạng thái KYC '${cust.data.kyc_status}' rồi — không thể chuyển tiếp (quy tắc 1 chiều, chỉ đổi được đúng 1 lần từ 'pending')`, false);
+  }
+  const res = await api("PATCH", `/customers/${id}/kyc`, {kyc_status});
+  toast("Đã cập nhật KYC khách hàng #" + id + " → " + kyc_status);
+  document.getElementById("c-kyc-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Accounts ----
+// Mirror đúng createAccountBody (Zod: customer_id/account_type_id bắt buộc số nguyên dương,
+// currency đúng 3 ký tự nếu có) — src/validators/accountSchemas.ts.
+function validateAccountCreateForm(formEl){
+  const el = formEl.elements;
+  const errors = {};
+  if(!isPositiveIntStr(el.customer_id.value)) errors.customer_id = "Bắt buộc, phải là số nguyên dương";
+  if(!el.account_type_id.value) errors.account_type_id = "Bắt buộc chọn loại tài khoản";
+  if(el.currency.value && el.currency.value.trim().length !== 3) errors.currency = "Phải đúng 3 ký tự (vd: VND, USD)";
+  return errors;
+}
+
+async function createAccount(){
+  const formEl = document.getElementById("form-account-create");
+  if(!applyFieldErrors(formEl, validateAccountCreateForm(formEl))) return;
+  const body = formValues(formEl);
+  const res = await api("POST", "/accounts", body);
+  toast("Mở tài khoản thành công: #" + res.data.account_id + " (" + res.data.account_number + ")");
+  formEl.reset();
+  clearFieldErrors(formEl);
+  document.getElementById("a-detail-id").value = res.data.account_id;
+  loadAccountDetail();
+}
+
+async function loadAccountDetail(){
+  const id = document.getElementById("a-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/accounts/${id}`);
+  const acc = res.data;
+  let html = renderKV(acc);
+
+  // Chi tiết hơn: tra thêm tên khách hàng sở hữu, không chỉ hiện customer_id thô.
+  const custRes = await api("GET", `/customers/${acc.customer_id}`).catch(() => null);
+  if(custRes){
+    html += `<div class="card"><h3>Chủ tài khoản</h3><div class="kv-wrap"><div class="kv">` +
+      `<div class="k">Họ tên</div><div>${custRes.data.full_name}</div>` +
+      `<div class="k">Email</div><div>${custRes.data.email}</div>` +
+      `<div class="k">KYC</div><div>${badge(custRes.data.kyc_status)}</div>` +
+      `</div></div></div>`;
+  }
+  document.getElementById("account-detail").innerHTML = html;
+
+  document.getElementById("account-cards").innerHTML = `<div class="empty">Đang tải…</div>`;
+  const cardsRes = await api("GET", `/accounts/${id}/cards`).catch(() => ({data: []}));
+  document.getElementById("account-cards").innerHTML = `<h4>Thẻ gắn với tài khoản</h4>` + renderTable(cardsRes.data, [
+    {key:"card_id", label:"Mã thẻ"},
+    {key:"card_number_masked", label:"Số thẻ"},
+    {key:"card_type", label:"Loại thẻ", render: badge},
+    {key:"status", label:"Trạng thái", render: badge},
+    {key:"expiry_date", label:"Ngày hết hạn"}
+  ]);
+}
+
+// Mirror đúng ALLOWED_TRANSITIONS trong src/services/accountService.ts:16-21 — closed là
+// terminal, 3 trạng thái còn lại đi qua lại tự do. Tự tra trạng thái hiện tại trước khi validate
+// để báo lỗi đúng như backend sẽ trả, thay vì để user gửi lên rồi mới biết bị từ chối.
+const ACCOUNT_ALLOWED_TRANSITIONS = {
+  active: ["dormant", "frozen", "closed"],
+  dormant: ["active", "frozen", "closed"],
+  frozen: ["active", "dormant", "closed"],
+  closed: [],
+};
+async function updateAccountStatus(){
+  const id = document.getElementById("a-status-id").value;
+  const status = document.getElementById("a-status-value").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  const acc = await api("GET", `/accounts/${id}`).catch(() => null);
+  if(!acc) return toast("Không tìm thấy tài khoản #" + id, false);
+  const current = acc.data.status;
+  if(current === status){
+    document.getElementById("account-status-result").innerHTML =
+      `<div class="hint">Tài khoản #${id} đã ở trạng thái '${current}' rồi, không cần đổi.</div>`;
+    return;
+  }
+  if(!ACCOUNT_ALLOWED_TRANSITIONS[current].includes(status)){
+    return toast(`Không thể chuyển tài khoản #${id} từ '${current}' sang '${status}'` +
+      (current === "closed" ? " (đã đóng — trạng thái cuối, không mở lại được)" : ""), false);
+  }
+  const res = await api("PATCH", `/accounts/${id}/status`, {status});
+  toast("Đã cập nhật trạng thái tài khoản #" + id);
+  document.getElementById("account-status-result").innerHTML = renderKV(res.data);
+}
+
+async function issueCard(){
+  const id = document.getElementById("a-card-account-id").value;
+  const card_type = document.getElementById("a-card-type").value;
+  const expiry_date = document.getElementById("a-card-expiry").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  if(!expiry_date) return toast("Nhập ngày hết hạn", false);
+  const today = new Date().toISOString().slice(0,10);
+  if(expiry_date <= today) return toast(`Ngày hết hạn phải sau hôm nay (${today}) — không thể phát hành thẻ đã hết hạn`, false);
+  const res = await api("POST", `/accounts/${id}/cards`, {card_type, expiry_date});
+  toast("Phát hành thẻ thành công: #" + res.data.card_id);
+  document.getElementById("issue-card-result").innerHTML = renderKV(res.data);
+}
+
+async function loadBalanceHistory(){
+  const id = document.getElementById("a-hist-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/accounts/${id}/balance-history`);
+  document.getElementById("account-history").innerHTML = renderTable(res.data, [
+    {key:"transaction_id", label:"Mã GD"}, {key:"txn_type", label:"Loại", render: badge},
+    {key:"amount", label:"Số tiền", render: fmtMoney}, {key:"txn_timestamp", label:"Thời gian"}
+  ]);
+}
+
+async function loadAccountTransactions(){
+  const id = document.getElementById("a-hist-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  const status = document.getElementById("a-hist-status").value;
+  const qs = new URLSearchParams({ size: "50" });
+  if(status) qs.set("status", status);
+  const res = await api("GET", `/accounts/${id}/transactions?${qs.toString()}`);
+  document.getElementById("account-history").innerHTML = renderTable(res.data, [
+    {key:"transaction_id", label:"Mã"}, {key:"txn_type", label:"Loại", render: badge},
+    {key:"amount", label:"Số tiền", render: fmtMoney}, {key:"status", label:"TT", render: badge},
+    {key:"description", label:"Diễn giải"}, {key:"txn_timestamp", label:"Thời gian"}
+  ]);
+}
+
+// ---- Term deposits (Tiền gửi có kỳ hạn) ----
+// Mirror đúng rule trong termDepositService.open() (src/services/termDepositService.ts:55-66)
+// + openTermDepositBody (Zod). ACCOUNT_NOT_ACTIVE/INSUFFICIENT_BALANCE cần tra account trước.
+async function validateDepositCreateForm(formEl){
+  const el = formEl.elements;
+  const errors = {};
+  if(!isPositiveIntStr(el.account_id.value)) errors.account_id = "Bắt buộc, phải là số nguyên dương";
+  const principal = unformatMoney(el.principal_amount.value);
+  if(!isMoneyAmountStr(principal)) errors.principal_amount = "Bắt buộc, phải là số dương, tối đa 2 chữ số thập phân";
+  if(!el.interest_rate.value || Number(el.interest_rate.value) < 0) errors.interest_rate = "Bắt buộc, không được âm";
+  if(!el.term_months.value || !Number.isInteger(Number(el.term_months.value)) || Number(el.term_months.value) <= 0)
+    errors.term_months = "Bắt buộc, phải là số nguyên dương";
+
+  // Business rule (không nằm trong Zod, chỉ check được sau khi có account_id + principal hợp lệ):
+  // tài khoản phải active và đủ số dư >= principal_amount.
+  if(!errors.account_id && !errors.principal_amount){
+    const acc = await api("GET", `/accounts/${el.account_id.value}`).catch(() => null);
+    if(!acc) errors.account_id = "Không tìm thấy tài khoản";
+    else if(acc.data.status !== "active") errors.account_id = `Tài khoản đang '${acc.data.status}', phải 'active' mới mở sổ được`;
+    else if(Number(acc.data.balance) < Number(principal))
+      errors.principal_amount = `Tài khoản chỉ còn ${fmtMoney(acc.data.balance)}, không đủ để trích ${fmtMoney(principal)}`;
+  }
+  return errors;
+}
+
+async function createTermDeposit(){
+  const formEl = document.getElementById("form-deposit-create");
+  if(!applyFieldErrors(formEl, await validateDepositCreateForm(formEl))) return;
+  const body = formValues(formEl);
+  const res = await api("POST", "/term-deposits", body, {"Idempotency-Key": idemKey("createTermDeposit", body)});
+  idemDone("createTermDeposit");
+  toast("Mở sổ tiết kiệm thành công: #" + res.data.term_deposit_id);
+  formEl.reset();
+  clearFieldErrors(formEl);
+  document.getElementById("dep-detail-id").value = res.data.term_deposit_id;
+  loadTermDepositDetail();
+}
+
+async function loadTermDepositDetail(){
+  const id = document.getElementById("dep-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã sổ tiết kiệm hợp lệ (số nguyên dương)", false);
+  const [dep, accrued, postings] = await Promise.all([
+    api("GET", `/term-deposits/${id}`),
+    api("GET", `/term-deposits/${id}/accrued-interest`).catch(()=>({data:null})),
+    api("GET", `/term-deposits/${id}/postings`).catch(()=>({data:[]})),
+  ]);
+  // Chi tiết hơn: tra thêm số tài khoản thật thay vì chỉ hiện account_id thô.
+  const accRes = await api("GET", `/accounts/${dep.data.account_id}`).catch(() => null);
+  let html = renderKV(dep.data);
+  if(accRes){
+    html += `<div class="hint">Tài khoản gắn với sổ này: <b>${accRes.data.account_number}</b> (số dư hiện tại: ${fmtMoney(accRes.data.balance)})</div>`;
+  }
+  if(accrued.data){
+    html += `<div class="card"><h3>Lãi dự thu (chưa hạch toán)</h3>` + renderKV(accrued.data) + `</div>`;
+  }
+  html += `<div class="card"><h3>Lịch sử ghi nhận lãi</h3>` + renderTable(postings.data, [
+    {key:"posting_id", label:"Mã"},
+    {key:"posting_type", label:"Loại", render: v => TD_POSTING_TYPE_LABELS[v] || v},
+    {key:"period_from", label:"Từ ngày"}, {key:"period_to", label:"Đến ngày"}, {key:"days", label:"Số ngày"},
+    {key:"interest_amount", label:"Tiền lãi", render: fmtMoney}, {key:"transaction_id", label:"Mã GD"}
+  ]) + `</div>`;
+  document.getElementById("deposit-detail").innerHTML = html;
+}
+
+async function loadTermDepositsByAccount(){
+  const id = document.getElementById("dep-by-account-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/accounts/${id}/term-deposits?size=50`);
+  document.getElementById("deposits-by-account").innerHTML = renderTable(res.data, [
+    {key:"term_deposit_id", label:"Mã"}, {key:"principal_amount", label:"Gốc", render: fmtMoney},
+    {key:"interest_rate", label:"Lãi suất %"}, {key:"term_months", label:"Kỳ hạn (th)"},
+    {key:"start_date", label:"Mở sổ"}, {key:"maturity_date", label:"Đáo hạn"},
+    {key:"status", label:"TT", render: badge}
+  ]);
+}
+
+// ---- Trả lãi tháng / Rút trước hạn / Đáo hạn: precheck mirror đúng rule backend ----
+// (termDepositService.postMonthlyInterest/withdrawEarly/mature — src/services/termDepositService.ts)
+// Đây là module bị đánh giá "khó nhất" trong TEST_DESIGN.md vì 3 hành động dùng chung 1 ô mã sổ,
+// mỗi hành động lại có điều kiện tiên quyết riêng theo status/payout_method/ngày tháng — rất dễ
+// bấm nhầm hành động không hợp lệ với trạng thái hiện tại của sổ rồi mới biết qua lỗi server.
+function daysBetweenISO(fromISO, toISO){
+  return Math.round((new Date(toISO+"T00:00:00Z") - new Date(fromISO+"T00:00:00Z")) / 86400000);
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+async function fetchDepositWithLastPosting(id){
+  const [depRes, postingsRes] = await Promise.all([
+    api("GET", `/term-deposits/${id}`).catch(() => null),
+    api("GET", `/term-deposits/${id}/postings`).catch(() => ({data:[]})),
+  ]);
+  if(!depRes) return null;
+  const postings = postingsRes.data;
+  const lastTo = postings.length
+    ? postings.slice().sort((a,b) => a.period_to < b.period_to ? 1 : -1)[0].period_to
+    : depRes.data.start_date;
+  return { deposit: depRes.data, lastPostingTo: lastTo };
+}
+
+async function precheckDepositAction(id, action, valueDateInput){
+  const found = await fetchDepositWithLastPosting(id);
+  if(!found) return { ok:false, message: `Không tìm thấy sổ tiết kiệm #${id}` };
+  const { deposit: d, lastPostingTo } = found;
+  const asOf = valueDateInput || todayISO();
+
+  if(d.status !== "active"){
+    return { ok:false, message: `Sổ #${id} không ở trạng thái 'active' (hiện tại: '${d.status}') — không thể xử lý`, deposit: d };
+  }
+  if(action === "monthly"){
+    if(d.payout_method !== "monthly")
+      return { ok:false, message: `Sổ #${id} dùng phương thức trả lãi '${d.payout_method}', không phải 'monthly'`, deposit: d };
+    if(asOf > d.maturity_date)
+      return { ok:false, message: `Sổ #${id} đã quá hạn (đáo hạn ${d.maturity_date}) — dùng "Xử lý đáo hạn" thay vì trả lãi tháng`, deposit: d };
+    const days = daysBetweenISO(lastPostingTo, asOf);
+    if(days <= 0)
+      return { ok:false, message: `Chưa phát sinh ngày lãi mới kể từ lần ghi nhận trước (${lastPostingTo})`, deposit: d };
+  }
+  if(action === "withdraw"){
+    if(asOf >= d.maturity_date)
+      return { ok:false, message: `Sổ #${id} đã đến/qua hạn (${d.maturity_date}) — dùng "Xử lý đáo hạn" thay vì rút trước hạn`, deposit: d };
+    if(daysBetweenISO(d.start_date, asOf) <= 0)
+      return { ok:false, message: `Chưa đủ 1 ngày kể từ ngày mở sổ (${d.start_date})`, deposit: d };
+  }
+  if(action === "mature"){
+    if(asOf < d.maturity_date)
+      return { ok:false, message: `Sổ #${id} chưa đến hạn (đáo hạn ${d.maturity_date})`, deposit: d };
+  }
+  return { ok:true, deposit: d };
+}
+
+// Chi tiết hơn: hiện ngay trạng thái/kỳ trả lãi/ngày đáo hạn của sổ khi nhập mã, để biết
+// nên bấm nút nào trước khi thử — không phải đoán rồi ăn lỗi.
+async function loadDepositActionInfo(){
+  const id = document.getElementById("dep-action-id").value;
+  const infoEl = document.getElementById("dep-action-info");
+  if(!isPositiveIntStr(id)){ infoEl.innerHTML = ""; return; }
+  const found = await fetchDepositWithLastPosting(id);
+  if(!found){ infoEl.innerHTML = `<div class="field-error">Không tìm thấy sổ #${id}</div>`; return; }
+  const d = found.deposit;
+  infoEl.innerHTML = `<div class="hint">Sổ #${id}: ${badge(d.status)} · kỳ trả lãi <b>${d.payout_method}</b> · ` +
+    `mở ${d.start_date} · đáo hạn <b>${d.maturity_date}</b> · lần ghi lãi gần nhất tới ${found.lastPostingTo}</div>`;
+}
+
+async function postMonthlyInterestUI(){
+  const id = document.getElementById("dep-action-id").value;
+  const value_date = document.getElementById("dep-action-date").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã sổ tiết kiệm hợp lệ (số nguyên dương)", false);
+  const check = await precheckDepositAction(id, "monthly", value_date);
+  if(!check.ok) return toast(check.message, false);
+  const body = value_date ? {value_date} : {};
+  const res = await api("POST", `/term-deposits/${id}/interest-postings/monthly`,
+    body, {"Idempotency-Key": idemKey("postMonthlyInterestUI:" + id, body)});
+  idemDone("postMonthlyInterestUI:" + id);
+  toast("Đã ghi nhận lãi tháng cho sổ #" + id);
+  document.getElementById("deposit-action-result").innerHTML =
+    `<div class="card"><h3>Kết quả trả lãi tháng</h3>` + renderKV(res.data) + `</div>`;
+  loadDepositActionInfo();
+}
+
+async function withdrawEarlyUI(){
+  const id = document.getElementById("dep-action-id").value;
+  const value_date = document.getElementById("dep-action-date").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã sổ tiết kiệm hợp lệ (số nguyên dương)", false);
+  const check = await precheckDepositAction(id, "withdraw", value_date);
+  if(!check.ok) return toast(check.message, false);
+  const body = value_date ? {value_date} : {};
+  const res = await api("POST", `/term-deposits/${id}/withdraw-early`,
+    body, {"Idempotency-Key": idemKey("withdrawEarlyUI:" + id, body)});
+  idemDone("withdrawEarlyUI:" + id);
+  toast("Đã tất toán trước hạn sổ #" + id);
+  document.getElementById("deposit-action-result").innerHTML =
+    `<div class="card"><h3>Sổ sau khi rút trước hạn</h3>` + renderKV(res.data.deposit) + `</div>` +
+    `<div class="card"><h3>Chi tiết lãi đã tính</h3>` + renderKV(res.data.posting) + `</div>`;
+  loadDepositActionInfo();
+}
+
+async function matureUI(){
+  const id = document.getElementById("dep-action-id").value;
+  const value_date = document.getElementById("dep-action-date").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã sổ tiết kiệm hợp lệ (số nguyên dương)", false);
+  const check = await precheckDepositAction(id, "mature", value_date);
+  if(!check.ok) return toast(check.message, false);
+  const body = value_date ? {value_date} : {};
+  const res = await api("POST", `/term-deposits/${id}/mature`,
+    body, {"Idempotency-Key": idemKey("matureUI:" + id, body)});
+  idemDone("matureUI:" + id);
+  toast("Đã xử lý đáo hạn sổ #" + id + (res.data.renewed ? " → tái tục sổ mới #" + res.data.renewed.term_deposit_id : ""));
+  let html = `<div class="card"><h3>Sổ sau đáo hạn</h3>` + renderKV(res.data.deposit) + `</div>`;
+  html += `<div class="card"><h3>Chi tiết lãi đáo hạn</h3>` + renderKV(res.data.posting) + `</div>`;
+  if(res.data.renewed){
+    html += `<div class="card"><h3>Sổ tái tục mới</h3>` + renderKV(res.data.renewed) + `</div>`;
+  }
+  document.getElementById("deposit-action-result").innerHTML = html;
+  loadDepositActionInfo();
+}
+
+// ---- Cards ----
+async function loadCardDetail(){
+  const id = document.getElementById("card-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã thẻ hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/cards/${id}`);
+  const card = res.data;
+  let html = renderKV(card);
+
+  // Chi tiết hơn: tra thêm số tài khoản chủ thẻ thay vì chỉ hiện account_id thô.
+  const accRes = await api("GET", `/accounts/${card.account_id}`).catch(() => null);
+  if(accRes){
+    html += `<div class="hint">Tài khoản gắn với thẻ này: <b>${accRes.data.account_number}</b> ` +
+      `(${badge(accRes.data.status)}, số dư ${fmtMoney(accRes.data.balance)})</div>`;
+  }
+  document.getElementById("card-detail").innerHTML = html;
+}
+
+// Mirror đúng ALLOWED_TRANSITIONS trong src/services/cardService.ts:12-16 — expired là terminal
+// (kể cả do COB tự động chuyển khi hết hạn), active/blocked đi lại tự do.
+const CARD_ALLOWED_TRANSITIONS = {
+  active: ["blocked", "expired"],
+  blocked: ["active", "expired"],
+  expired: [],
+};
+async function updateCardStatus(){
+  const id = document.getElementById("card-status-id").value;
+  const status = document.getElementById("card-status-value").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã thẻ hợp lệ (số nguyên dương)", false);
+  const card = await api("GET", `/cards/${id}`).catch(() => null);
+  if(!card) return toast("Không tìm thấy thẻ #" + id, false);
+  const current = card.data.status;
+  if(current === status){
+    document.getElementById("card-status-result").innerHTML =
+      `<div class="hint">Thẻ #${id} đã ở trạng thái '${current}' rồi, không cần đổi.</div>`;
+    return;
+  }
+  if(!CARD_ALLOWED_TRANSITIONS[current].includes(status)){
+    return toast(`Không thể chuyển thẻ #${id} từ '${current}' sang '${status}'` +
+      (current === "expired" ? " (đã hết hạn — trạng thái cuối, không kích hoạt lại được)" : ""), false);
+  }
+  const res = await api("PATCH", `/cards/${id}/status`, {status});
+  toast("Đã cập nhật trạng thái thẻ #" + id);
+  document.getElementById("card-status-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Transactions ----
+// Mirror đúng rule của createTransactionBody (Zod) + business rule trong transactionService.create()
+// (src/services/transactionService.ts:31-38) — không tự bịa rule mới, chỉ lặp lại rule backend
+// đã có để báo lỗi sớm phía client.
+function validateTxnCreateForm(formEl){
+  const el = formEl.elements;
+  const errors = {};
+  if(!isPositiveIntStr(el.account_id.value)) errors.account_id = "Bắt buộc, phải là số nguyên dương";
+  if(!el.category_id.value) errors.category_id = "Bắt buộc chọn danh mục";
+  const amount = unformatMoney(el.amount.value);
+  if(!isMoneyAmountStr(amount)) errors.amount = "Bắt buộc, phải là số dương, tối đa 2 chữ số thập phân";
+  const txnType = el.txn_type.value;
+  const related = el.related_account_id.value;
+  if(txnType === "transfer"){
+    if(!related) errors.related_account_id = "Bắt buộc khi loại giao dịch là transfer";
+    else if(!isPositiveIntStr(related)) errors.related_account_id = "Phải là số nguyên dương";
+    else if(related === el.account_id.value) errors.related_account_id = "Không được trùng mã tài khoản nguồn";
+  } else if(related){
+    errors.related_account_id = `Không được nhập khi loại giao dịch là '${txnType}' (chỉ dùng cho transfer)`;
+  }
+  if(el.card_id.value && !isPositiveIntStr(el.card_id.value)) errors.card_id = "Phải là số nguyên dương";
+  if(el.merchant_id.value && !isPositiveIntStr(el.merchant_id.value)) errors.merchant_id = "Phải là số nguyên dương";
+  if(el.currency.value && el.currency.value.trim().length !== 3) errors.currency = "Phải đúng 3 ký tự (vd: VND, USD)";
+  return errors;
+}
+
+async function createTransaction(){
+  const formEl = document.getElementById("form-txn-create");
+  if(!applyFieldErrors(formEl, validateTxnCreateForm(formEl))) return;
+  const body = formValues(formEl);
+  const res = await api("POST", "/transactions", body, {"Idempotency-Key": idemKey("createTransaction", body)});
+  idemDone("createTransaction");
+  toast("Tạo giao dịch thành công: #" + res.data.transaction_id);
+  const alert = res.data.fraud_alert;
+  if(alert){
+    toast(`⚠️ Giao dịch #${res.data.transaction_id} vượt ngưỡng — đã tự tạo cảnh báo gian lận #${alert.alert_id} (điểm rủi ro ${alert.risk_score}/100)`, "warn");
+  }
+  formEl.reset();
+  clearFieldErrors(formEl);
+  document.getElementById("t-detail-id").value = res.data.transaction_id;
+  await loadTransactionDetail();
+  if(alert){
+    document.getElementById("transaction-detail").innerHTML += `<div class="card" style="border-color:var(--warn);">` +
+      `<h3 style="color:var(--warn);">⚠️ Cảnh báo gian lận tự động</h3>` + renderKV(alert) + `</div>`;
+  }
+}
+async function loadTransactionDetail(){
+  const id = document.getElementById("t-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã giao dịch hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/transactions/${id}`);
+  const txn = res.data;
+  let html = renderKV(txn);
+
+  // Chi tiết hơn: tra thêm số tài khoản/số thẻ thật thay vì chỉ hiện ID thô, để đối chiếu
+  // nhanh không phải mở tab khác tra riêng từng mã.
+  const [acc, relAcc, card] = await Promise.all([
+    api("GET", `/accounts/${txn.account_id}`).catch(()=>null),
+    txn.related_account_id ? api("GET", `/accounts/${txn.related_account_id}`).catch(()=>null) : Promise.resolve(null),
+    txn.card_id ? api("GET", `/cards/${txn.card_id}`).catch(()=>null) : Promise.resolve(null),
+  ]);
+  const extras = [];
+  if(acc) extras.push(["Số tài khoản (tra thêm)", acc.data.account_number]);
+  if(relAcc) extras.push(["Số tài khoản liên quan (tra thêm)", relAcc.data.account_number]);
+  if(card) extras.push(["Số thẻ (tra thêm)", card.data.card_number_masked]);
+  if(extras.length){
+    html += `<div class="card"><h3>Thông tin tra cứu thêm</h3><div class="kv-wrap"><div class="kv">` +
+      extras.map(([k,v]) => `<div class="k">${k}</div><div>${v}</div>`).join("") +
+      `</div></div></div>`;
+  }
+  document.getElementById("transaction-detail").innerHTML = html;
+}
+async function reverseTransaction(){
+  const id = document.getElementById("t-reverse-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã giao dịch hợp lệ (số nguyên dương)", false);
+  const scope = "reverseTransaction:" + id;
+  const res = await api("POST", `/transactions/${id}/reverse`, undefined, {"Idempotency-Key": idemKey(scope, {})});
+  idemDone(scope);
+  toast("Đã đảo giao dịch #" + id + " → giao dịch mới #" + res.data.transaction_id);
+  document.getElementById("transaction-reverse-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Loans ----
+// Mirror đúng rule trong loanService.create() (src/services/loanService.ts:41-66): account phải
+// thuộc đúng customer_id truyền vào, và phải active.
+async function validateLoanCreateForm(formEl){
+  const el = formEl.elements;
+  const errors = {};
+  if(!isPositiveIntStr(el.customer_id.value)) errors.customer_id = "Bắt buộc, phải là số nguyên dương";
+  if(!isPositiveIntStr(el.account_id.value)) errors.account_id = "Bắt buộc, phải là số nguyên dương";
+  const principal = unformatMoney(el.principal_amount.value);
+  if(!isMoneyAmountStr(principal)) errors.principal_amount = "Bắt buộc, phải là số dương, tối đa 2 chữ số thập phân";
+  if(el.interest_rate.value === "" || Number(el.interest_rate.value) < 0) errors.interest_rate = "Bắt buộc, không được âm";
+  if(!el.term_months.value || !Number.isInteger(Number(el.term_months.value)) || Number(el.term_months.value) <= 0)
+    errors.term_months = "Bắt buộc, phải là số nguyên dương";
+  if(!el.disbursed_date.value) errors.disbursed_date = "Bắt buộc chọn ngày giải ngân";
+
+  if(!errors.customer_id && !errors.account_id){
+    const acc = await api("GET", `/accounts/${el.account_id.value}`).catch(() => null);
+    if(!acc) errors.account_id = "Không tìm thấy tài khoản";
+    else if(String(acc.data.customer_id) !== el.customer_id.value)
+      errors.account_id = `Tài khoản này không thuộc khách hàng #${el.customer_id.value}`;
+    else if(acc.data.status !== "active")
+      errors.account_id = `Tài khoản đang '${acc.data.status}', phải 'active' mới giải ngân được`;
+  }
+  return errors;
+}
+
+async function createLoan(){
+  const form = document.getElementById("form-loan-create");
+  if(!applyFieldErrors(form, await validateLoanCreateForm(form))) return;
+  const values = formValues(form);
+  const customerId = values.customer_id;
+  delete values.customer_id;
+  const res = await api("POST", `/customers/${customerId}/loans`, values, {"Idempotency-Key": idemKey("createLoan", values)});
+  idemDone("createLoan");
+  toast("Tạo khoản vay thành công: #" + res.data.loan_id);
+  form.reset();
+  clearFieldErrors(form);
+  document.getElementById("l-detail-id").value = res.data.loan_id;
+  loadLoanDetail();
+}
+async function loadLoanDetail(){
+  const id = document.getElementById("l-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã khoản vay hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/loans/${id}`);
+  document.getElementById("loan-detail").innerHTML = renderKV(res.data);
+}
+async function loadLoanPayments(){
+  const id = document.getElementById("l-detail-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã khoản vay hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/loans/${id}/payments`);
+  document.getElementById("loan-payments").innerHTML = renderTable(res.data, [
+    {key:"payment_id", label:"Mã"}, {key:"due_date", label:"Hạn trả"}, {key:"amount_due", label:"Phải trả", render: fmtMoney},
+    {key:"amount_paid", label:"Đã trả", render: fmtMoney}, {key:"status", label:"TT", render: badge}, {key:"paid_date", label:"Ngày trả"}
+  ]);
+}
+
+// Mirror đúng rule trong loanService.payInstallment() (src/services/loanService.ts:125-174):
+// loan phải active + có account gắn kèm, kỳ trả nợ phải thuộc đúng loan và CHƯA trả, tài khoản
+// phải active và đủ số dư.
+async function precheckLoanPayment(loanId, paymentId, amountPaid){
+  const loan = await api("GET", `/loans/${loanId}`).catch(() => null);
+  if(!loan) return { ok:false, message: `Không tìm thấy khoản vay #${loanId}` };
+  if(loan.data.status !== "active")
+    return { ok:false, message: `Khoản vay #${loanId} không ở trạng thái active (hiện tại: '${loan.data.status}')` };
+  if(!loan.data.account_id)
+    return { ok:false, message: `Khoản vay #${loanId} chưa gắn tài khoản trả góp` };
+
+  const paymentsRes = await api("GET", `/loans/${loanId}/payments`).catch(() => ({data:[]}));
+  const payment = paymentsRes.data.find(p => String(p.payment_id) === String(paymentId));
+  if(!payment) return { ok:false, message: `Không tìm thấy kỳ trả nợ #${paymentId} thuộc khoản vay #${loanId}` };
+  if(payment.paid_date) return { ok:false, message: `Kỳ trả nợ #${paymentId} đã được thanh toán rồi (ngày ${payment.paid_date})` };
+
+  const acc = await api("GET", `/accounts/${loan.data.account_id}`).catch(() => null);
+  if(!acc) return { ok:false, message: `Không tìm thấy tài khoản #${loan.data.account_id}` };
+  if(acc.data.status !== "active")
+    return { ok:false, message: `Tài khoản #${loan.data.account_id} đang '${acc.data.status}', phải 'active' mới trả góp được` };
+  if(Number(acc.data.balance) < Number(amountPaid))
+    return { ok:false, message: `Tài khoản chỉ còn ${fmtMoney(acc.data.balance)}, không đủ để trả ${fmtMoney(amountPaid)}` };
+  return { ok:true };
+}
+
+async function payInstallment(){
+  const loanId = document.getElementById("p-loan-id").value;
+  const paymentId = document.getElementById("p-payment-id").value;
+  const amount_paid = unformatMoney(document.getElementById("p-amount").value);
+  const paid_date = document.getElementById("p-date").value;
+  if(!isPositiveIntStr(loanId) || !isPositiveIntStr(paymentId)) return toast("Nhập mã khoản vay/kỳ trả nợ hợp lệ", false);
+  if(!isMoneyAmountStr(amount_paid)) return toast("Nhập số tiền trả hợp lệ (số dương)", false);
+  if(!paid_date) return toast("Nhập ngày trả", false);
+  const check = await precheckLoanPayment(loanId, paymentId, amount_paid);
+  if(!check.ok) return toast(check.message, false);
+  const body = {amount_paid, paid_date};
+  const scope = "payInstallment:" + loanId + ":" + paymentId;
+  const res = await api("POST", `/loans/${loanId}/payments/${paymentId}/pay`, body, {"Idempotency-Key": idemKey(scope, body)});
+  idemDone(scope);
+  toast("Thanh toán thành công kỳ #" + paymentId);
+  document.getElementById("pay-installment-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Fraud alerts ----
+async function searchFraudAlerts(){
+  const status = document.getElementById("f-search-status").value;
+  const score = document.getElementById("f-search-score").value;
+  const qs = new URLSearchParams({size:"50"});
+  if(status) qs.set("status", status);
+  if(score) qs.set("min_risk_score", score);
+  const res = await api("GET", "/fraud-alerts?" + qs.toString());
+  document.getElementById("fraud-table").innerHTML = renderTable(res.data, [
+    {key:"alert_id", label:"Mã"}, {key:"transaction_id", label:"Mã GD"}, {key:"risk_score", label:"Điểm RR"},
+    {key:"alert_type", label:"Loại"}, {key:"status", label:"TT", render: badge}, {key:"created_at", label:"Ngày tạo"}
+  ]);
+}
+async function createFraudAlert(){
+  const transaction_id = document.getElementById("f-create-txn").value;
+  const risk_score = document.getElementById("f-create-score").value;
+  const alert_type = document.getElementById("f-create-type").value;
+  if(!isPositiveIntStr(transaction_id)) return toast("Nhập mã giao dịch hợp lệ (số nguyên dương)", false);
+  if(risk_score === "" || !/^\d+$/.test(risk_score) || Number(risk_score) < 0 || Number(risk_score) > 100)
+    return toast("Điểm rủi ro phải là số nguyên từ 0 đến 100", false);
+  const txn = await api("GET", `/transactions/${transaction_id}`).catch(() => null);
+  if(!txn) return toast(`Không tìm thấy giao dịch #${transaction_id}`, false);
+  const res = await api("POST", "/fraud-alerts", {transaction_id, risk_score, alert_type: alert_type || undefined});
+  toast("Tạo cảnh báo thành công: #" + res.data.alert_id);
+  document.getElementById("fraud-create-result").innerHTML = renderKV(res.data);
+}
+
+// Mirror đúng ALLOWED_TRANSITIONS trong fraudAlertService.ts:9-14 — open có thể đi tới cả 3
+// trạng thái sau, reviewing chỉ đi tới 2 trạng thái đóng, closed_fp/closed_confirmed là terminal.
+const FRAUD_ALLOWED_TRANSITIONS = {
+  open: ["reviewing", "closed_fp", "closed_confirmed"],
+  reviewing: ["closed_fp", "closed_confirmed"],
+  closed_fp: [],
+  closed_confirmed: [],
+};
+async function updateFraudStatus(){
+  const id = document.getElementById("f-status-id").value;
+  const status = document.getElementById("f-status-value").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã cảnh báo hợp lệ (số nguyên dương)", false);
+  const alert = await api("GET", `/fraud-alerts/${id}`).catch(() => null);
+  if(!alert) return toast("Không tìm thấy cảnh báo #" + id, false);
+  const current = alert.data.status;
+  if(!FRAUD_ALLOWED_TRANSITIONS[current].includes(status)){
+    return toast(`Không thể chuyển cảnh báo #${id} từ '${current}' sang '${status}'` +
+      (current.startsWith("closed") ? " (đã đóng — trạng thái cuối)" : ""), false);
+  }
+  const res = await api("PATCH", `/fraud-alerts/${id}/status`, {status});
+  toast("Đã cập nhật cảnh báo #" + id);
+  document.getElementById("fraud-status-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Ref data panel extras ----
+async function createAccountType(){
+  const type_name = document.getElementById("rt-name").value.trim();
+  const interest_rate = document.getElementById("rt-rate").value;
+  if(!type_name || type_name.length > 50) return toast("Tên loại bắt buộc, tối đa 50 ký tự", false);
+  if(interest_rate === "" || Number(interest_rate) < 0) return toast("Lãi suất bắt buộc, không được âm", false);
+  await api("POST", "/account-types", {type_name, interest_rate});
+  toast("Đã thêm loại tài khoản: " + type_name);
+  document.getElementById("rt-name").value = "";
+  document.getElementById("rt-rate").value = "";
+  loadRefData();
+}
+async function loadMerchants(){
+  const res = await api("GET", "/merchants?size=50");
+  document.getElementById("ref-merchants").innerHTML = renderTable(res.data, [
+    {key:"merchant_id", label:"Mã"}, {key:"merchant_name", label:"Tên"}, {key:"category", label:"Ngành"}
+  ]);
+}
+function isCurrencyCode(v){ return /^[A-Za-z]{3}$/.test(String(v || "").trim()); }
+
+async function lookupFx(){
+  const from = document.getElementById("fx-from").value;
+  const to = document.getElementById("fx-to").value;
+  const date = document.getElementById("fx-date").value;
+  if(!isCurrencyCode(from) || !isCurrencyCode(to)) return toast("Mã tiền tệ phải đúng 3 chữ cái (vd: USD, VND)", false);
+  if(!date) return toast("Nhập ngày tra cứu", false);
+  const res = await api("GET", `/exchange-rates?from=${from}&to=${to}&date=${date}`);
+  document.getElementById("fx-lookup-result").innerHTML = renderKV(res.data);
+}
+async function createFx(){
+  const currency_from = document.getElementById("fx-from").value;
+  const currency_to = document.getElementById("fx-to").value;
+  const rate_date = document.getElementById("fx-date").value;
+  const rate = document.getElementById("fx-rate").value;
+  if(!isCurrencyCode(currency_from) || !isCurrencyCode(currency_to)) return toast("Mã tiền tệ phải đúng 3 chữ cái (vd: USD, VND)", false);
+  if(!rate_date) return toast("Nhập ngày áp dụng tỷ giá", false);
+  if(!rate || Number(rate) <= 0) return toast("Tỷ giá bắt buộc, phải là số dương", false);
+  const res = await api("POST", "/exchange-rates", {currency_from, currency_to, rate, rate_date});
+  toast("Đã tạo tỷ giá " + currency_from + "->" + currency_to);
+  document.getElementById("fx-create-result").innerHTML = renderKV(res.data);
+}
+
+// Mirror đúng rule trong fxService.convert() (src/services/fxService.ts:41-78): 2 tài khoản khác
+// nhau, cùng tồn tại + active, tiền tệ khác nhau và 1 trong 2 phải là VND (base currency), đủ số dư.
+const FX_BASE_CURRENCY = "VND";
+async function precheckFxConvert(fromId, toId, fromAmount){
+  if(fromId === toId) return { ok:false, message: "Tài khoản nguồn và đích không được trùng nhau" };
+  const [fromAcc, toAcc] = await Promise.all([
+    api("GET", `/accounts/${fromId}`).catch(() => null),
+    api("GET", `/accounts/${toId}`).catch(() => null),
+  ]);
+  if(!fromAcc) return { ok:false, message: `Không tìm thấy tài khoản nguồn #${fromId}` };
+  if(!toAcc) return { ok:false, message: `Không tìm thấy tài khoản đích #${toId}` };
+  if(fromAcc.data.status !== "active") return { ok:false, message: `Tài khoản nguồn #${fromId} đang '${fromAcc.data.status}', phải 'active'` };
+  if(toAcc.data.status !== "active") return { ok:false, message: `Tài khoản đích #${toId} đang '${toAcc.data.status}', phải 'active'` };
+  if(fromAcc.data.currency === toAcc.data.currency)
+    return { ok:false, message: `2 tài khoản cùng tiền tệ (${fromAcc.data.currency}) — dùng "Tạo giao dịch" (transfer) thay vì quy đổi ngoại tệ` };
+  if(fromAcc.data.currency !== FX_BASE_CURRENCY && toAcc.data.currency !== FX_BASE_CURRENCY)
+    return { ok:false, message: `Chỉ hỗ trợ quy đổi giữa VND và 1 ngoại tệ khác — không hỗ trợ ${fromAcc.data.currency} <-> ${toAcc.data.currency} trực tiếp` };
+  if(Number(fromAcc.data.balance) < Number(fromAmount))
+    return { ok:false, message: `Tài khoản nguồn chỉ còn ${fmtMoney(fromAcc.data.balance)} ${fromAcc.data.currency}, không đủ để quy đổi ${fmtMoney(fromAmount)}` };
+  return { ok:true };
+}
+
+async function convertFx(){
+  const from_account_id = document.getElementById("fxconv-from").value;
+  const to_account_id = document.getElementById("fxconv-to").value;
+  const from_amount = unformatMoney(document.getElementById("fxconv-amount").value);
+  const rate_date = document.getElementById("fxconv-date").value;
+  if(!isPositiveIntStr(from_account_id) || !isPositiveIntStr(to_account_id)) return toast("Nhập mã tài khoản nguồn/đích hợp lệ", false);
+  if(!isMoneyAmountStr(from_amount)) return toast("Nhập số tiền hợp lệ (số dương)", false);
+  const check = await precheckFxConvert(from_account_id, to_account_id, from_amount);
+  if(!check.ok) return toast(check.message, false);
+  const body = {from_account_id, to_account_id, from_amount, ...(rate_date ? {rate_date} : {})};
+  const res = await api("POST", "/fx-transfers", body, {"Idempotency-Key": idemKey("convertFx", body)});
+  idemDone("convertFx");
+  toast(`Quy đổi thành công: ${from_amount} ${res.data.from_transaction.currency} -> ${res.data.to_amount} ${res.data.to_transaction.currency} (tỷ giá ${res.data.rate})`);
+  document.getElementById("fxconv-result").innerHTML =
+    `<div class="kv-wrap"><div class="kv"><div class="k">Tỷ giá áp dụng</div><div>${res.data.rate}</div>` +
+    `<div class="k">Số tiền quy đổi được</div><div>${fmtMoney(res.data.to_amount)} ${res.data.to_transaction.currency}</div></div></div>` +
+    `<div class="card"><h3>Giao dịch bên nguồn</h3>` + renderKV(res.data.from_transaction) + `</div>` +
+    `<div class="card"><h3>Giao dịch bên đích</h3>` + renderKV(res.data.to_transaction) + `</div>`;
+}
+
+// ---- General Ledger (Sổ cái) ----
+async function loadTrialBalance(){
+  const res = await api("GET", "/gl/trial-balance");
+  const summary = `<div class="kv-wrap"><div class="kv">` +
+    `<div class="k">Tổng Nợ</div><div>${fmtMoney(res.data.total_debit)}</div>` +
+    `<div class="k">Tổng Có</div><div>${fmtMoney(res.data.total_credit)}</div>` +
+    `<div class="k">Cân bằng</div><div>${res.data.balanced
+      ? '<span class="badge b-active">Cân bằng (Nợ = Có)</span>'
+      : '<span class="badge b-closed">LỆCH — kiểm tra ngay</span>'}</div>` +
+    `</div></div>`;
+  const table = renderTable(res.data.accounts, [
+    {key:"code", label:"Mã TK"}, {key:"name", label:"Tên tài khoản"},
+    {key:"account_class", label:"Loại", render: v => GL_CLASS_LABELS[v] || v},
+    {key:"normal_balance", label:"SD thường", render: v => GL_SIDE_LABELS[v] || v},
+    {key:"total_debit", label:"Tổng Nợ", render: fmtMoney},
+    {key:"total_credit", label:"Tổng Có", render: fmtMoney},
+    {key:"balance", label:"Số dư ròng", render: fmtMoney},
+  ]);
+  document.getElementById("gl-trial-balance").innerHTML = summary + table;
+}
+loadTrialBalance();
+
+async function loadGlAccountLedger(){
+  const code = document.getElementById("gl-account-code").value.trim();
+  if(!code) return toast("Nhập mã tài khoản kế toán (vd: 1000, 2000)", false);
+  const res = await api("GET", `/gl/accounts/${code}/entries?size=50`);
+  document.getElementById("gl-account-entries").innerHTML = renderTable(res.data, [
+    {key:"gl_entry_id", label:"Mã"}, {key:"transaction_id", label:"Mã GD"},
+    {key:"entry_side", label:"Bên", render: v => GL_SIDE_LABELS[v] || v},
+    {key:"amount", label:"Số tiền", render: fmtMoney}, {key:"entry_date", label:"Ngày"},
+    {key:"description", label:"Diễn giải"}
+  ]);
+}
+
+async function loadGlTransactionEntries(){
+  const id = document.getElementById("gl-txn-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã giao dịch hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/gl/transactions/${id}/entries`);
+  document.getElementById("gl-txn-entries").innerHTML = renderTable(res.data, [
+    {key:"gl_entry_id", label:"Mã"}, {key:"account_code", label:"Mã TK"}, {key:"account_name", label:"Tên TK"},
+    {key:"entry_side", label:"Bên", render: v => GL_SIDE_LABELS[v] || v},
+    {key:"amount", label:"Số tiền", render: fmtMoney}
+  ]);
+}
+
+// ---- Maker-Checker (auth queue) ----
+let APP_USERS = [];
+
+const AUTHQ_PAYLOAD_EXAMPLES = {
+  CREATE_TRANSACTION: {account_id:3, category_id:1, txn_type:"deposit", amount:"500000", currency:"VND", description:"Nộp tiền qua maker-checker"},
+  UPDATE_ACCOUNT_STATUS: {account_id:3, status:"frozen"},
+  OPEN_TERM_DEPOSIT: {account_id:3, principal_amount:"5000000", interest_rate:"6.0", term_months:6, payout_method:"maturity"},
+  WITHDRAW_TERM_DEPOSIT_EARLY: {term_deposit_id:1},
+  MATURE_TERM_DEPOSIT: {term_deposit_id:1},
+};
+
+function fillExamplePayload(){
+  const op = document.getElementById("authq-op-type").value;
+  document.getElementById("authq-payload").value = JSON.stringify(AUTHQ_PAYLOAD_EXAMPLES[op], null, 2);
+}
+
+async function loadAppUsers(){
+  const res = await api("GET", "/users");
+  APP_USERS = res.data;
+  document.getElementById("authq-users").innerHTML = renderTable(APP_USERS, [
+    {key:"user_id", label:"Mã"}, {key:"username", label:"Tên đăng nhập"}, {key:"display_name", label:"Họ tên"},
+    {key:"role", label:"Vai trò", render: v => ROLE_LABELS[v] || v}
+  ]);
+  fillExamplePayload();
+}
+loadAppUsers();
+
+// Phiên đăng nhập độc lập cho maker/checker (để mô phỏng 2 người trong cùng 1 tab trình duyệt).
+const AUTHQ_SESSION = { maker: null, checker: null };
+
+function renderSessionBadge(kind){
+  const s = AUTHQ_SESSION[kind];
+  const el = document.getElementById(`authq-${kind}-session`);
+  if(!s){ el.innerHTML = `<span class="empty">Chưa đăng nhập.</span>`; return; }
+  el.innerHTML = `<div class="kv-wrap"><div class="kv">` +
+    `<div class="k">Đang đăng nhập</div><div>${s.user.display_name} (${s.user.username}) — #${s.user.user_id}</div>` +
+    `<div class="k">Vai trò</div><div>${ROLE_LABELS[s.user.role] || s.user.role}</div>` +
+    `</div></div>`;
+}
+
+async function loginAs(kind){
+  const username = document.getElementById(`authq-${kind}-username`).value;
+  const password = document.getElementById(`authq-${kind}-password`).value;
+  if(!username || !password) return toast("Nhập tên đăng nhập và mật khẩu", false);
+  const res = await api("POST", "/auth/login", {username, password});
+  AUTHQ_SESSION[kind] = { token: res.data.token, user: res.data.user };
+  toast(`Đăng nhập ${kind === "maker" ? "Maker" : "Checker"} thành công: ${res.data.user.display_name}`);
+  renderSessionBadge(kind);
+}
+
+// Mirror đúng MAKER_ROLES/CHECKER_ROLES trong src/services/authQueueService.ts:15-16.
+const MAKER_ROLES = ["maker", "both", "admin"];
+const CHECKER_ROLES = ["checker", "both", "admin"];
+
+// Chỉ check field bắt buộc CÓ MẶT trong payload theo từng nhánh của enqueueBody (Zod
+// discriminated union, src/validators/authQueueSchemas.ts) — không validate sâu kiểu dữ liệu,
+// server sẽ làm việc đó khi enqueue. Mục tiêu là bắt lỗi "quên field" phổ biến nhất trước khi gửi.
+const AUTHQ_REQUIRED_KEYS = {
+  CREATE_TRANSACTION: ["account_id", "category_id", "txn_type", "amount"],
+  UPDATE_ACCOUNT_STATUS: ["account_id", "status"],
+  OPEN_TERM_DEPOSIT: ["account_id", "principal_amount", "interest_rate", "term_months"],
+  WITHDRAW_TERM_DEPOSIT_EARLY: ["term_deposit_id"],
+  MATURE_TERM_DEPOSIT: ["term_deposit_id"],
+};
+
+async function submitAuthQueue(){
+  if(!AUTHQ_SESSION.maker) return toast("Đăng nhập Maker trước đã", false);
+  if(!MAKER_ROLES.includes(AUTHQ_SESSION.maker.user.role))
+    return toast(`Tài khoản '${AUTHQ_SESSION.maker.user.username}' có vai trò '${AUTHQ_SESSION.maker.user.role}', không có quyền nhập lệnh (maker)`, false);
+  const operation_type = document.getElementById("authq-op-type").value;
+  let payload;
+  try{ payload = JSON.parse(document.getElementById("authq-payload").value); }
+  catch(e){ return toast("Payload không phải JSON hợp lệ: " + e.message, false); }
+  const missing = (AUTHQ_REQUIRED_KEYS[operation_type] || []).filter(k => payload[k] === undefined || payload[k] === null || payload[k] === "");
+  if(missing.length) return toast(`Payload thiếu field bắt buộc: ${missing.join(", ")}`, false);
+  const res = await api("POST", "/auth-queue", {operation_type, payload}, {"Authorization": "Bearer " + AUTHQ_SESSION.maker.token});
+  toast("Đã nộp lệnh #" + res.data.queue_id + " vào hàng đợi — CHƯA có hiệu lực, chờ checker duyệt.");
+  document.getElementById("authq-submit-result").innerHTML = renderKV(res.data);
+  document.getElementById("authq-action-id").value = res.data.queue_id;
+}
+
+async function searchAuthQueue(){
+  const status = document.getElementById("authq-search-status").value;
+  const qs = new URLSearchParams({size:"50"});
+  if(status) qs.set("status", status);
+  const res = await api("GET", "/auth-queue?" + qs.toString());
+  document.getElementById("authq-table").innerHTML = renderTable(res.data, [
+    {key:"queue_id", label:"Mã"}, {key:"operation_type", label:"Nghiệp vụ", render: v => AUTHQ_OP_LABELS[v] || v},
+    {key:"maker_id", label:"Maker"}, {key:"checker_id", label:"Checker"},
+    {key:"status", label:"TT", render: badge}, {key:"input_at", label:"Thời gian nhập"}
+  ]);
+}
+
+async function loadAuthQueueDetail(){
+  const id = document.getElementById("authq-action-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã hàng đợi hợp lệ (số nguyên dương)", false);
+  const res = await api("GET", `/auth-queue/${id}`);
+  document.getElementById("authq-detail").innerHTML = renderKV(res.data);
+}
+
+// Mirror đúng rule trong authQueueService.authorize()/reject() (src/services/authQueueService.ts:71-134):
+// yêu cầu phải đang 'pending', và checker không được trùng maker đã nộp lệnh.
+async function precheckAuthQueueAction(id, checkerUserId){
+  const entry = await api("GET", `/auth-queue/${id}`).catch(() => null);
+  if(!entry) return { ok:false, message: `Không tìm thấy yêu cầu #${id}` };
+  if(entry.data.status !== "pending")
+    return { ok:false, message: `Yêu cầu #${id} đã ở trạng thái '${entry.data.status}' rồi, không thể duyệt/từ chối lại`, entry: entry.data };
+  if(entry.data.maker_id === checkerUserId)
+    return { ok:false, message: `Người nhập lệnh (maker #${entry.data.maker_id}) không được tự phê duyệt/từ chối yêu cầu của chính mình`, entry: entry.data };
+  return { ok:true, entry: entry.data };
+}
+
+async function authorizeQueue(){
+  if(!AUTHQ_SESSION.checker) return toast("Đăng nhập Checker trước đã", false);
+  if(!CHECKER_ROLES.includes(AUTHQ_SESSION.checker.user.role))
+    return toast(`Tài khoản '${AUTHQ_SESSION.checker.user.username}' có vai trò '${AUTHQ_SESSION.checker.user.role}', không có quyền phê duyệt (checker)`, false);
+  const id = document.getElementById("authq-action-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã hàng đợi hợp lệ (số nguyên dương)", false);
+  const check = await precheckAuthQueueAction(id, AUTHQ_SESSION.checker.user.user_id);
+  if(!check.ok) return toast(check.message, false);
+  const res = await api("POST", `/auth-queue/${id}/authorize`, {}, {"Authorization": "Bearer " + AUTHQ_SESSION.checker.token});
+  toast("Đã phê duyệt #" + id + " — nghiệp vụ đã được thực thi.");
+  document.getElementById("authq-detail").innerHTML = renderKV(res.data);
+}
+
+async function rejectQueue(){
+  if(!AUTHQ_SESSION.checker) return toast("Đăng nhập Checker trước đã", false);
+  if(!CHECKER_ROLES.includes(AUTHQ_SESSION.checker.user.role))
+    return toast(`Tài khoản '${AUTHQ_SESSION.checker.user.username}' có vai trò '${AUTHQ_SESSION.checker.user.role}', không có quyền phê duyệt (checker)`, false);
+  const id = document.getElementById("authq-action-id").value;
+  const reason = document.getElementById("authq-reject-reason").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã hàng đợi hợp lệ (số nguyên dương)", false);
+  if(!reason.trim()) return toast("Nhập lý do từ chối", false);
+  const check = await precheckAuthQueueAction(id, AUTHQ_SESSION.checker.user.user_id);
+  if(!check.ok) return toast(check.message, false);
+  const res = await api("POST", `/auth-queue/${id}/reject`, {reason}, {"Authorization": "Bearer " + AUTHQ_SESSION.checker.token});
+  toast("Đã từ chối #" + id);
+  document.getElementById("authq-detail").innerHTML = renderKV(res.data);
+}
+
+// ---- Close of Business (COB) ----
+async function runCob(){
+  const as_of_date = document.getElementById("cob-as-of").value;
+  const res = await api("POST", "/cob/run", as_of_date ? {as_of_date} : {});
+  const d = res.data;
+  toast(`COB #${d.cob_run_id} hoàn tất: ${d.term_deposits_matured} sổ đáo hạn, ${d.loans_marked_defaulted} khoản vay chuyển nợ xấu` + (d.errors_count ? `, ${d.errors_count} lỗi` : ""));
+  document.getElementById("cob-run-result").innerHTML = renderKV(d);
+  loadCobHistory();
+}
+
+async function loadCobHistory(){
+  const res = await api("GET", "/cob/runs?size=20");
+  document.getElementById("cob-history").innerHTML = renderTable(res.data, [
+    {key:"cob_run_id", label:"Mã"}, {key:"run_date", label:"Ngày xử lý"},
+    {key:"term_deposits_matured", label:"Sổ đáo hạn"}, {key:"loans_marked_defaulted", label:"Vay chuyển nợ xấu"},
+    {key:"errors_count", label:"Lỗi"}, {key:"status", label:"TT", render: badge}, {key:"finished_at", label:"Hoàn tất lúc"}
+  ]);
+}
+</script>
+</body>
+</html>
