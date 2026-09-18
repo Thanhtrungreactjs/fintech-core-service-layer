@@ -98,6 +98,35 @@
   .split > .card{min-width:0;}
   @media(max-width:900px){.split{grid-template-columns:1fr;}}
   .empty{color:var(--muted);font-size:12px;padding:8px 0;}
+
+  /* ---- Responsive: sidebar thành drawer trượt trên mobile ---- */
+  .menu-toggle{display:none;background:var(--navy-3);color:#fff;border:none;border-radius:2px;
+    padding:7px 12px;font-size:17px;line-height:1;margin-right:12px;cursor:pointer;flex-shrink:0;}
+  .menu-toggle:hover{background:var(--navy);}
+  .sidebar-backdrop{display:none;}
+  @media(max-width:780px){
+    body{font-size:13px;}
+    .systembar{font-size:10px;padding:5px 12px;}
+    .menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
+    header.top{display:flex;align-items:center;}
+    .sidebar{position:fixed;top:0;left:0;height:100vh;z-index:60;
+      transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto;}
+    .sidebar.open{transform:translateX(0);box-shadow:2px 0 20px rgba(0,0,0,.35);}
+    .sidebar-backdrop.open{display:block;position:fixed;inset:0;background:rgba(6,14,28,.45);z-index:55;}
+    .content{padding:14px 14px 32px;max-width:100%;}
+    .app{min-height:calc(100vh - 22px);}
+  }
+  @media(max-width:480px){
+    header.top h1{font-size:16px;}
+    .grid{grid-template-columns:1fr;}
+    .grid-dash{grid-template-columns:1fr;}
+    .kv{grid-template-columns:1fr;}
+    .kv div.k{border-bottom:none;padding-bottom:2px;}
+    .toolbar .field{min-width:0;flex:1 1 140px;}
+    #toast{left:12px;right:12px;bottom:12px;}
+    .toast-item{max-width:none;}
+    #ekyc-preview img{max-width:calc(50% - 8px) !important;}
+  }
 </style>
 </head>
 <body>
@@ -106,7 +135,8 @@
   <span id="sysclock"></span>
 </div>
 <div class="app">
-  <nav class="sidebar">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <nav class="sidebar" id="sidebar">
     <div class="brand"><b>FinCore Console</b><span>Back office kiểu T24</span></div>
     <div class="nav-item active" data-panel="dashboard">Tổng quan</div>
     <div class="nav-item" data-panel="customers">Khách hàng</div>
@@ -123,6 +153,7 @@
   </nav>
   <main class="content">
     <header class="top">
+      <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
       <div>
         <h1 id="panel-title">Tổng quan</h1>
         <div class="sub">Fintech Core Service Layer — /api/v1</div>
@@ -210,7 +241,7 @@
           <div class="field"><label>Ảnh selfie *</label><input id="ekyc-selfie-image" type="file" accept="image/*"></div>
         </div>
         <div class="row-actions"><button class="warn" onclick="withBusyButton(this, runEkycVerify)">Xác minh eKYC</button></div>
-        <div id="ekyc-preview" style="display:flex;gap:16px;margin-top:10px;"></div>
+        <div id="ekyc-preview" style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;"></div>
         <div id="ekyc-result"></div>
       </div>
 
@@ -994,6 +1025,17 @@ function renderKV(obj){
 }
 
 // ---- Nav ----
+// Trên mobile, sidebar là drawer trượt (position:fixed, off-canvas mặc định) — menuToggle
+// mở/đóng, chọn 1 mục hoặc bấm ra ngoài (backdrop) thì tự đóng lại.
+const sidebarEl = document.getElementById("sidebar");
+const sidebarBackdropEl = document.getElementById("sidebarBackdrop");
+function openSidebar(){ sidebarEl.classList.add("open"); sidebarBackdropEl.classList.add("open"); }
+function closeSidebar(){ sidebarEl.classList.remove("open"); sidebarBackdropEl.classList.remove("open"); }
+document.getElementById("menuToggle").addEventListener("click", ()=>{
+  sidebarEl.classList.contains("open") ? closeSidebar() : openSidebar();
+});
+sidebarBackdropEl.addEventListener("click", closeSidebar);
+
 document.querySelectorAll(".nav-item").forEach(el=>{
   el.addEventListener("click", ()=>{
     document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
@@ -1003,6 +1045,7 @@ document.querySelectorAll(".nav-item").forEach(el=>{
     document.getElementById("panel-" + key).classList.add("active");
     document.getElementById("panel-title").textContent = el.textContent;
     document.getElementById("crumb").textContent = "FINCORE › " + el.textContent.toUpperCase();
+    closeSidebar();
   });
 });
 
