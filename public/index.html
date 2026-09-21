@@ -210,7 +210,7 @@
 
   @media(max-width:900px){
     body{font-size:14px;}
-    .systembar{font-size:10px;padding:6px 10px;flex-wrap:wrap;row-gap:2px;}
+    .systembar{font-size:10px;padding:6px 10px;flex-wrap:wrap;justify-content:flex-start;gap:4px 10px;}
     .menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
     header.top{align-items:flex-start;}
     header.top .title-row{display:flex;align-items:center;}
@@ -230,9 +230,12 @@
     table{font-size:11.5px;}
   }
   @media(max-width:480px){
+    header.top h1{font-size:16px;}
+    .grid-dash{grid-template-columns:1fr;}
     .toast-item{max-width:calc(100vw - 40px);}
     #toast{right:14px;bottom:14px;left:14px;}
     button{padding:9px 15px;}
+    #ekyc-preview img{max-width:calc(50% - 8px) !important;}
   }
 </style>
 </head>
@@ -371,7 +374,7 @@
           <div class="field"><label>Ảnh selfie *</label><input id="ekyc-selfie-image" type="file" accept="image/*"></div>
         </div>
         <div class="row-actions"><button class="warn" onclick="withBusyButton(this, runEkycVerify)">Xác minh eKYC</button></div>
-        <div id="ekyc-preview" style="display:flex;gap:16px;margin-top:10px;"></div>
+        <div id="ekyc-preview" style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;"></div>
         <div id="ekyc-result"></div>
       </div>
 
@@ -1206,6 +1209,13 @@ function renderKV(obj){
 }
 
 // ---- Nav ----
+// Trên mobile, sidebar là drawer trượt (position:fixed, off-canvas mặc định) — hamburger
+// mở/đóng, chọn 1 mục hoặc bấm ra ngoài (overlay) thì tự đóng lại.
+const sidebarEl = document.getElementById("sidebar");
+const sidebarOverlayEl = document.getElementById("sidebar-overlay");
+function openSidebar(){ sidebarEl.classList.add("open"); sidebarOverlayEl.classList.add("open"); }
+function closeSidebar(){ sidebarEl.classList.remove("open"); sidebarOverlayEl.classList.remove("open"); }
+
 document.querySelectorAll(".nav-item").forEach(el=>{
   el.addEventListener("click", ()=>{
     document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
@@ -1218,16 +1228,6 @@ document.querySelectorAll(".nav-item").forEach(el=>{
     closeSidebar();
   });
 });
-
-// ---- Sidebar di động (drawer trượt trên mobile) ----
-function openSidebar(){
-  document.getElementById("sidebar").classList.add("open");
-  document.getElementById("sidebar-overlay").classList.add("open");
-}
-function closeSidebar(){
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("sidebar-overlay").classList.remove("open");
-}
 
 // ---- Reference data (shared) ----
 let ACCOUNT_TYPES = [];
