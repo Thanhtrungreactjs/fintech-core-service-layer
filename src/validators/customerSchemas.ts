@@ -7,6 +7,7 @@ export const createCustomerBody = z.object({
   phone: z.string().max(20).nullable().optional(),
   dob: z.string().date().nullable().optional(),
   country: z.string().max(50).nullable().optional(),
+  address: z.string().max(255).nullable().optional(),
   referred_by: z.coerce.number().int().positive().nullable().optional(),
 });
 
@@ -15,6 +16,7 @@ export const updateCustomerBody = z.object({
   phone: z.string().max(20).nullable().optional(),
   dob: z.string().date().nullable().optional(),
   country: z.string().max(50).nullable().optional(),
+  address: z.string().max(255).nullable().optional(),
 });
 
 export const updateKycBody = z.object({

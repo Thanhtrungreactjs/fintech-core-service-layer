@@ -7,97 +7,233 @@
 <style>
   :root{
     --navy:#0b1f3a; --navy-2:#122a4d; --navy-3:#1a3866;
-    --accent:#c9a24a; --accent-2:#2f7d6b;
-    --bg:#e9edf4; --card:#ffffff; --border:#c9d3e0;
+    --accent:#e0b04f; --accent-2:#2f9d84;
+    --bg:#eef1f8; --card:#ffffff; --border:#d7deea;
     --text:#1c2733; --muted:#5b6b7f;
-    --ok:#1f8a53; --warn:#b7791f; --danger:#c0392b; --info:#2563a8;
+    --ok:#22a866; --warn:#d98a1f; --danger:#e0473a; --info:#2f7fd6;
+    --radius:12px; --radius-sm:9px; --radius-pill:999px;
+    --shadow-sm:0 1px 3px rgba(11,31,58,.06), 0 1px 2px rgba(11,31,58,.04);
+    --shadow-md:0 6px 20px rgba(11,31,58,.10);
+    --shadow-glow:0 0 0 3px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:Tahoma,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;}
+  body{margin:0;font-family:"Segoe UI",system-ui,Tahoma,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;
+    -webkit-font-smoothing:antialiased;}
 
-  .systembar{background:#050f22;color:#8fa7c9;font-size:11px;padding:5px 16px;display:flex;justify-content:space-between;letter-spacing:.4px;font-family:Consolas,monospace;}
+  .systembar{background:linear-gradient(90deg,#040c1c,#0a1830);color:#8fa7c9;font-size:11px;padding:6px 16px;
+    display:flex;justify-content:space-between;letter-spacing:.4px;font-family:Consolas,monospace;
+    border-bottom:1px solid rgba(224,176,79,.25);}
   .systembar .sep{color:#33507a;margin:0 8px;}
 
   .app{display:flex;min-height:calc(100vh - 26px);}
-  .sidebar{width:225px;background:linear-gradient(180deg,var(--navy),var(--navy-2));color:#dce6f5;flex-shrink:0;}
-  .sidebar .brand{padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .sidebar{width:255px;background:linear-gradient(180deg,var(--navy),var(--navy-2) 60%,#0d2445);color:#dce6f5;flex-shrink:0;
+    box-shadow:2px 0 12px rgba(0,0,0,.12);}
+  .sidebar .brand{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
   .sidebar .brand b{color:#fff;font-size:16px;letter-spacing:.4px;}
-  .sidebar .brand span{display:block;font-size:10.5px;color:var(--accent);margin-top:3px;letter-spacing:1px;text-transform:uppercase;}
-  .nav-item{padding:10px 18px 10px 20px;cursor:pointer;border-left:3px solid transparent;font-size:12.8px;color:#c3d1e6;letter-spacing:.2px;}
-  .nav-item::before{content:"›";margin-right:7px;color:var(--accent);font-weight:700;}
-  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
-  .nav-item.active{background:var(--navy-3);border-left-color:var(--accent);color:#fff;font-weight:700;}
+  .sidebar .brand span{display:block;font-size:10.5px;color:var(--accent);margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
+  .nav-item{padding:12px 16px 12px 18px;margin:3px 10px;border-radius:var(--radius-sm);cursor:pointer;
+    font-size:15px;color:#c3d1e6;letter-spacing:.2px;transition:background .18s ease,color .18s ease,transform .18s ease,padding-left .18s ease;}
+  .nav-item::before{content:"›";margin-right:7px;color:var(--accent);font-weight:700;transition:margin-right .18s ease;}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff;padding-left:22px;}
+  .nav-item.active{background:linear-gradient(90deg,var(--navy-3),rgba(255,255,255,.06));color:#fff;font-weight:700;
+    box-shadow:inset 3px 0 0 var(--accent), var(--shadow-sm);}
+  .nav-item.active::before{margin-right:9px;}
 
   .content{flex:1;padding:18px 26px 40px;max-width:1300px;min-width:0;}
   header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  header.top h1{font-size:18px;margin:0;color:var(--navy);letter-spacing:.2px;}
+  header.top h1{font-size:19px;margin:0;color:var(--navy);letter-spacing:.2px;}
   header.top .sub{color:var(--muted);font-size:11.5px;}
   .crumb{background:#dfe8f4;border:1px solid var(--border);color:var(--navy-3);font-family:Consolas,monospace;
-    font-size:11px;padding:6px 12px;margin-bottom:16px;letter-spacing:.4px;border-radius:2px;}
+    font-size:11px;padding:7px 14px;margin-bottom:16px;letter-spacing:.4px;border-radius:var(--radius-pill);
+    display:inline-block;}
 
   .panel{display:none;}
-  .panel.active{display:block;}
+  .panel.active{display:block;animation:fadeIn .28s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
-  .card{background:var(--card);border:1px solid var(--border);border-radius:3px;padding:16px 18px;margin-bottom:16px;
-    box-shadow:0 1px 2px rgba(11,31,58,.04);}
-  .card h3{margin:-17px -19px 14px -19px;font-size:12px;color:#fff;background:var(--navy-3);
-    padding:9px 18px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;border-radius:2px 2px 0 0;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;
+    box-shadow:var(--shadow-sm);transition:box-shadow .2s ease,border-color .2s ease;}
+  .card:hover{box-shadow:var(--shadow-md);border-color:#c3cee0;}
+  .card h3{margin:-19px -21px 16px -21px;font-size:12px;color:#fff;
+    background:linear-gradient(90deg,var(--navy-3),var(--navy));
+    padding:11px 20px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;border-radius:var(--radius) var(--radius) 0 0;
+    display:flex;align-items:center;gap:8px;}
+  .card h3::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px 2px rgba(224,176,79,.7);flex-shrink:0;}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;}
   .grid-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start;}
   .grid-dash > .card{min-width:0;}
 
-  label{display:block;font-size:10.8px;color:var(--muted);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
-  input,select{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:2px;font-size:12.8px;background:#fbfcfe;}
-  input:focus,select:focus{outline:none;border-color:var(--navy-3);background:#fff;}
+  label{display:block;font-size:10.8px;color:var(--navy-3);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+  input,select,textarea{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    font-size:12.8px;background:#fbfcfe;color:var(--text);transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+    font-family:inherit;}
+  input:hover,select:hover{border-color:#b7c3d6;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy-3);background:#fff;
+    box-shadow:var(--shadow-glow) rgba(26,56,102,.14);}
   .field{margin-bottom:2px;min-width:0;}
   .field.has-error input,.field.has-error select{border-color:var(--danger);background:#fdf2f1;}
-  .field-error{color:var(--danger);font-size:11px;margin-top:3px;line-height:1.3;}
-  .row-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .field.has-error input:focus,.field.has-error select:focus{box-shadow:var(--shadow-glow) rgba(224,71,58,.16);}
+  .field-error{color:var(--danger);font-size:11px;margin-top:4px;line-height:1.3;font-weight:600;
+    animation:shakeIn .28s ease;}
+  @keyframes shakeIn{0%{opacity:0;transform:translateX(-4px);}60%{transform:translateX(2px);}100%{opacity:1;transform:translateX(0);}}
+  .row-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;}
 
-  button{cursor:pointer;border:1px solid transparent;border-radius:2px;padding:8px 16px;font-size:11.5px;
-    font-weight:700;text-transform:uppercase;letter-spacing:.4px;background:var(--navy-3);color:#fff;}
-  button:hover{background:var(--navy);}
-  button.secondary{background:#eef2f7;color:var(--navy);border:1px solid var(--border);}
-  button.secondary:hover{background:#e2e9f2;}
-  button.ok{background:var(--accent-2);} button.ok:hover{background:#235f52;}
-  button.warn{background:var(--warn);color:#fff;} button.warn:hover{background:#9c6519;}
-  button.danger{background:var(--danger);color:#fff;} button.danger:hover{background:#9e2d20;}
+  button{cursor:pointer;border:1px solid transparent;border-radius:var(--radius-pill);padding:9px 20px;font-size:11.5px;
+    font-weight:700;text-transform:uppercase;letter-spacing:.4px;background:linear-gradient(135deg,var(--navy-3),var(--navy));
+    color:#fff;box-shadow:var(--shadow-sm);transition:transform .12s ease,box-shadow .18s ease,filter .18s ease,opacity .18s ease;}
+  button:hover{filter:brightness(1.1);box-shadow:var(--shadow-md);}
+  button:active{transform:scale(.96);}
+  button:disabled{opacity:.55;cursor:default;transform:none;filter:none;box-shadow:none;}
+  button.secondary{background:#eef2f7;color:var(--navy);border:1.5px solid var(--border);box-shadow:none;}
+  button.secondary:hover{background:#e2e9f2;filter:none;border-color:#b7c3d6;}
+  button.ok{background:linear-gradient(135deg,#33b57e,var(--accent-2));} button.ok:hover{filter:brightness(1.08);}
+  button.warn{background:linear-gradient(135deg,#e6a13a,var(--warn));color:#fff;}
+  button.danger{background:linear-gradient(135deg,#ea6255,var(--danger));color:#fff;}
 
-  .table-wrap{overflow-x:auto;}
+  .table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);}
   table{width:100%;border-collapse:collapse;font-size:12.2px;min-width:max-content;}
-  th,td{text-align:left;padding:6px 9px;border:1px solid var(--border);white-space:nowrap;}
-  th{background:#e4ecf6;color:var(--navy);font-weight:700;text-transform:uppercase;font-size:10.2px;letter-spacing:.4px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th{background:#e4ecf6;color:var(--navy);font-weight:700;text-transform:uppercase;font-size:10.2px;letter-spacing:.4px;
+    position:sticky;top:0;}
   tbody tr:nth-child(even) td{background:#f6f9fc;}
-  tr:hover td{background:#eaf2fb;}
+  tbody tr{transition:background .12s ease;}
+  tr:hover td{background:#e4eefb;}
+  tr.row-clickable{cursor:pointer;}
+  tr.row-clickable:hover td{background:#d7e8fc;}
+  tr.row-clickable:active td{background:#c8ddf5;}
 
   .mono{font-family:Consolas,monospace;}
-  .badge{display:inline-block;padding:2px 9px;border-radius:2px;font-size:10.8px;font-weight:700;color:#fff;letter-spacing:.2px;}
-  .b-active,.b-completed,.b-verified,.b-closed_fp,.b-authorized{background:var(--ok);}
-  .b-dormant,.b-pending,.b-reviewing{background:var(--warn);}
-  .b-frozen,.b-blocked,.b-matured{background:var(--info);}
-  .b-closed,.b-reversed,.b-expired,.b-rejected,.b-open,.b-closed_confirmed,.b-withdrawn,.b-defaulted,.b-failed{background:var(--danger);}
-  .b-debit,.b-credit,.b-prepaid,.b-deposit,.b-withdrawal,.b-transfer,.b-payment,.b-fee,.b-interest{background:#5a6b82;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:var(--radius-pill);
+    font-size:10.8px;font-weight:700;color:#fff;letter-spacing:.3px;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);}
+  .b-active,.b-completed,.b-verified,.b-closed_fp,.b-authorized{background:linear-gradient(135deg,#2fc07f,var(--ok));}
+  .b-dormant,.b-pending,.b-reviewing{background:linear-gradient(135deg,#eaa53f,var(--warn));}
+  .b-frozen,.b-blocked,.b-matured{background:linear-gradient(135deg,#4a95e0,var(--info));}
+  .b-closed,.b-reversed,.b-expired,.b-rejected,.b-open,.b-closed_confirmed,.b-withdrawn,.b-defaulted,.b-failed{background:linear-gradient(135deg,#ea6255,var(--danger));}
+  .b-debit,.b-credit,.b-prepaid,.b-deposit,.b-withdrawal,.b-transfer,.b-payment,.b-fee,.b-interest{background:linear-gradient(135deg,#6d7f99,#5a6b82);}
 
-  .kv{display:grid;grid-template-columns:190px 1fr;gap:0;font-size:12.8px;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
-  .kv div{padding:7px 12px;border-bottom:1px solid var(--border);}
+  .change-badge{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:12px;white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
+  .change-credit{color:var(--ok);}
+  .change-debit{color:var(--danger);}
+
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:0;font-size:12.8px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+  .kv div{padding:8px 13px;border-bottom:1px solid var(--border);}
   .kv div:nth-last-child(2),.kv div:last-child{border-bottom:none;}
   .kv div.k{color:var(--navy);font-weight:700;background:#eef2f7;font-size:11.5px;}
-  .kv-wrap{background:#f7f9fc;border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:12px;}
+  .kv-wrap{background:#f7f9fc;border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:12px;}
 
   .muted{color:var(--muted);font-size:12px;}
-  .toolbar{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
+  .toolbar{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
   .toolbar .field{min-width:150px;}
 
-  #toast{position:fixed;bottom:18px;right:18px;z-index:99;display:flex;flex-direction:column;gap:8px;}
-  .toast-item{padding:10px 16px;border-radius:2px;color:#fff;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:360px;}
-  .toast-item.ok{background:var(--ok);} .toast-item.err{background:var(--danger);} .toast-item.warn{background:var(--warn);}
+  #toast{position:fixed;bottom:20px;right:20px;z-index:99;display:flex;flex-direction:column;gap:10px;
+    pointer-events:none;}
+  .toast-item{padding:12px 18px;border-radius:var(--radius);color:#fff;font-size:12.5px;font-weight:500;
+    box-shadow:0 10px 28px rgba(0,0,0,.22);max-width:360px;display:flex;align-items:center;gap:10px;
+    pointer-events:auto;position:relative;overflow:hidden;
+    animation:toastIn .32s cubic-bezier(.34,1.56,.64,1);}
+  .toast-item::before{font-size:15px;line-height:1;}
+  .toast-item.ok{background:linear-gradient(135deg,#2fc07f,var(--ok));}
+  .toast-item.ok::before{content:"✓";}
+  .toast-item.err{background:linear-gradient(135deg,#ea6255,var(--danger));}
+  .toast-item.err::before{content:"✕";}
+  .toast-item.warn{background:linear-gradient(135deg,#eaa53f,var(--warn));}
+  .toast-item.warn::before{content:"⚠";}
+  .toast-item.leaving{animation:toastOut .26s ease forwards;}
+  .toast-item::after{content:"";position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.55);
+    animation:toastBar linear forwards;animation-duration:var(--dur,4.2s);}
+  @keyframes toastIn{from{opacity:0;transform:translateX(40px) scale(.92);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes toastOut{to{opacity:0;transform:translateX(40px) scale(.92);}}
+  @keyframes toastBar{from{width:100%;}to{width:0%;}}
 
-  .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+  .hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;}
   .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .split > .card{min-width:0;}
   @media(max-width:900px){.split{grid-template-columns:1fr;}}
-  .empty{color:var(--muted);font-size:12px;padding:8px 0;}
+  .empty{color:var(--muted);font-size:12px;padding:8px 0;animation:fadeIn .25s ease;}
+
+  /* ---- Maker-Checker: quy trình + phân vai trò ---- */
+  .steps-flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;}
+  .step-box{flex:1;min-width:175px;background:#f3f6fb;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;display:flex;gap:10px;align-items:flex-start;transition:box-shadow .18s ease,transform .18s ease;}
+  .step-box:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+  .step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--navy-3),var(--navy));
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;flex-shrink:0;}
+  .step-text{display:flex;flex-direction:column;gap:2px;font-size:11.8px;}
+  .step-text b{color:var(--navy);font-size:12.5px;}
+  .step-text span{color:var(--muted);}
+  .step-arrow{display:flex;align-items:center;color:var(--accent);font-size:18px;font-weight:700;}
+  @media(max-width:900px){.step-arrow{display:none;}}
+
+  .card.role-maker{border-left:4px solid var(--info);}
+  .card.role-maker h3{background:linear-gradient(90deg,#1d4d8a,#2f7fd6);}
+  .card.role-checker{border-left:4px solid #8452cf;}
+  .card.role-checker h3{background:linear-gradient(90deg,#5c3a9e,#8452cf);}
+
+  .session-chip{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:var(--radius-pill);
+    background:#eafaf1;border:1px solid #bfe8cf;color:#1a7a4c;font-size:12px;font-weight:600;}
+  .session-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 0 3px rgba(34,168,102,.18);animation:sessionPulse 1.8s ease-in-out infinite;}
+  @keyframes sessionPulse{0%,100%{box-shadow:0 0 0 3px rgba(34,168,102,.18);}50%{box-shadow:0 0 0 5px rgba(34,168,102,.28);}}
+
+  /* ---- Đánh giá điểm tín dụng ---- */
+  .cs-wrap{margin-top:6px;animation:fadeIn .3s ease;}
+  .cs-gauge{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px 20px;}
+  .cs-score{font-size:46px;font-weight:800;line-height:1;letter-spacing:-.5px;transition:color .3s ease;}
+  .cs-score-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .cs-range{display:flex;justify-content:space-between;width:100%;max-width:420px;font-size:10.5px;color:var(--muted);
+    font-family:Consolas,monospace;margin-top:6px;}
+  .cs-bar{position:relative;width:100%;max-width:420px;height:10px;border-radius:var(--radius-pill);
+    background:linear-gradient(90deg,#e0473a,#d98a1f,#e0b04f,#22a866);overflow:visible;box-shadow:inset 0 1px 3px rgba(0,0,0,.15);}
+  .cs-bar-marker{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--navy);
+    transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.3);transition:left .5s cubic-bezier(.34,1.4,.64,1);}
+  .cs-grade{margin-top:12px;padding:5px 18px;border-radius:var(--radius-pill);color:#fff;font-weight:700;
+    font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+  .cs-recommend{background:#f3f6fb;border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;
+    font-size:12.5px;margin-bottom:14px;}
+  .cs-factors{display:flex;flex-direction:column;gap:8px;}
+  .cs-factor{border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 13px;background:#fff;
+    transition:box-shadow .15s ease;}
+  .cs-factor:hover{box-shadow:var(--shadow-sm);}
+  .cs-factor-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--navy);}
+  .cs-factor-detail{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+
+  /* ---- Responsive / mobile drawer sidebar ---- */
+  .menu-toggle{display:none;background:transparent;border:none;box-shadow:none;color:var(--navy);
+    font-size:20px;line-height:1;padding:6px 9px;margin-right:10px;border-radius:var(--radius-sm);flex-shrink:0;}
+  .menu-toggle:hover{background:#e4ecf6;filter:none;box-shadow:none;}
+  .menu-toggle:active{transform:scale(.94);}
+  .sidebar-overlay{display:none;}
+
+  @media(max-width:900px){
+    body{font-size:14px;}
+    .systembar{font-size:10px;padding:6px 10px;flex-wrap:wrap;row-gap:2px;}
+    .menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
+    header.top{align-items:flex-start;}
+    header.top .title-row{display:flex;align-items:center;}
+    .content{padding:14px 14px 32px;max-width:100%;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:70;width:82vw;max-width:300px;
+      transform:translateX(-100%);transition:transform .26s ease;overflow-y:auto;}
+    .sidebar.open{transform:translateX(0);box-shadow:10px 0 34px rgba(0,0,0,.35);}
+    .sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(5,10,22,.55);z-index:65;
+      opacity:0;pointer-events:none;transition:opacity .26s ease;}
+    .sidebar-overlay.open{opacity:1;pointer-events:auto;}
+    .card{padding:16px 14px;}
+    .card h3{margin:-17px -15px 14px -15px;padding:10px 15px;}
+    .grid{grid-template-columns:1fr;}
+    .kv{grid-template-columns:1fr;}
+    .kv div.k{padding-bottom:2px;}
+    .toolbar .field{min-width:0;flex:1 1 140px;}
+    table{font-size:11.5px;}
+  }
+  @media(max-width:480px){
+    .toast-item{max-width:calc(100vw - 40px);}
+    #toast{right:14px;bottom:14px;left:14px;}
+    button{padding:9px 15px;}
+  }
 </style>
 </head>
 <body>
@@ -106,7 +242,8 @@
   <span id="sysclock"></span>
 </div>
 <div class="app">
-  <nav class="sidebar">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
     <div class="brand"><b>FinCore Console</b><span>Back office kiểu T24</span></div>
     <div class="nav-item active" data-panel="dashboard">Tổng quan</div>
     <div class="nav-item" data-panel="customers">Khách hàng</div>
@@ -123,9 +260,12 @@
   </nav>
   <main class="content">
     <header class="top">
-      <div>
-        <h1 id="panel-title">Tổng quan</h1>
-        <div class="sub">Fintech Core Service Layer — /api/v1</div>
+      <div class="title-row">
+        <button class="menu-toggle" onclick="openSidebar()" aria-label="Mở menu">☰</button>
+        <div>
+          <h1 id="panel-title">Tổng quan</h1>
+          <div class="sub">Fintech Core Service Layer — /api/v1</div>
+        </div>
       </div>
     </header>
     <div class="crumb" id="crumb">FINCORE › TỔNG QUAN</div>
@@ -139,7 +279,12 @@
       <div class="grid-dash">
         <div class="card"><h3>Loại tài khoản</h3><div id="dash-account-types" class="empty">Đang tải…</div></div>
         <div class="card"><h3>Danh mục giao dịch</h3><div id="dash-categories" class="empty">Đang tải…</div></div>
-        <div class="card"><h3>Cảnh báo đang mở</h3><div id="dash-fraud" class="empty">Đang tải…</div></div>
+      </div>
+      <div class="card">
+        <h3>Cảnh báo đang mở</h3>
+        <p class="hint" style="margin-top:0;margin-bottom:10px;">Bấm vào 1 dòng để xem chi tiết cảnh báo.</p>
+        <div id="dash-fraud" class="empty">Đang tải…</div>
+        <div id="dash-fraud-detail"></div>
       </div>
     </section>
 
@@ -153,6 +298,7 @@
           <div class="field"><label>Điện thoại</label><input name="phone"></div>
           <div class="field"><label>Ngày sinh</label><input name="dob" type="date"></div>
           <div class="field"><label>Quốc gia</label><input name="country" placeholder="VN"></div>
+          <div class="field"><label>Địa chỉ</label><input name="address" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/TP"></div>
           <div class="field"><label>Mã người giới thiệu</label><input name="referred_by" type="number" min="1"></div>
         </form>
         <div class="row-actions"><button onclick="createCustomer()">Tạo khách hàng</button></div>
@@ -193,6 +339,21 @@
           Cố thực hiện sẽ nhận lỗi <code>KYC_INVALID_TRANSITION</code>. Đây là chủ đích thiết kế (chống rửa tiền/gian lận danh tính) — không phải giới hạn kỹ thuật.
         </div>
         <div id="c-kyc-result"></div>
+      </div>
+
+      <div class="card">
+        <h3>Đánh giá điểm tín dụng</h3>
+        <div class="hint" style="margin-top:0;">
+          Điểm tín dụng nội bộ (thang 300-850, kiểu FICO) — core banking như T24 tổng hợp lịch sử trả nợ,
+          dư nợ đang vay so với số dư tài khoản, độ dài quan hệ, trạng thái KYC và cảnh báo gian lận sẵn có
+          trong hệ thống thành 1 điểm số phục vụ xét duyệt vay. <b>Không phải</b> điểm CIC/bureau thật —
+          T24 thật cũng không tự chấm điểm này, luôn lấy từ 1 tổ chức xếp hạng tín dụng bên ngoài rồi lưu lại.
+        </div>
+        <div class="toolbar" style="margin-top:10px;">
+          <div class="field"><label>Mã khách hàng</label><input id="cs-customer-id" type="number" min="1"></div>
+          <button class="secondary" onclick="withBusyButton(this, loadCreditScore)">Chấm điểm tín dụng</button>
+        </div>
+        <div id="credit-score-result"></div>
       </div>
 
       <div class="card">
@@ -555,14 +716,28 @@
     <!-- MAKER-CHECKER -->
     <section class="panel" id="panel-authqueue">
       <div class="card">
+        <h3>Quy trình Maker-Checker (4 bước)</h3>
+        <p class="muted" style="margin-top:0;">Nguyên tắc "4 mắt" trong nghiệp vụ ngân hàng: 1 người nhập lệnh (Maker), 1 người KHÁC phải kiểm tra rồi mới phê duyệt (Checker). Không ai được tự duyệt lệnh của chính mình.</p>
+        <div class="steps-flow">
+          <div class="step-box"><div class="step-num">1</div><div class="step-text"><b>Đăng nhập</b><span>Maker &amp; Checker đăng nhập bằng 2 tài khoản khác nhau</span></div></div>
+          <div class="step-arrow">→</div>
+          <div class="step-box"><div class="step-num">2</div><div class="step-text"><b>Maker nhập lệnh</b><span>Nộp yêu cầu vào hàng đợi — <u>chưa</u> có hiệu lực, tiền chưa di chuyển</span></div></div>
+          <div class="step-arrow">→</div>
+          <div class="step-box"><div class="step-num">3</div><div class="step-text"><b>Checker xét duyệt</b><span>Xem chi tiết lệnh rồi phê duyệt hoặc từ chối kèm lý do</span></div></div>
+          <div class="step-arrow">→</div>
+          <div class="step-box"><div class="step-num">4</div><div class="step-text"><b>Thực thi tự động</b><span>Phê duyệt xong, hệ thống chạy nghiệp vụ thật ngay lập tức</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>Người dùng nội bộ demo</h3>
         <p class="muted">Đăng nhập thật bằng JWT (mật khẩu demo cho cả 5 user: <b>Demo@123</b>). Vì cần mô phỏng 2 người thao tác trong cùng 1 trình duyệt, panel này có 2 ô đăng nhập độc lập: 1 cho vai trò Maker, 1 cho vai trò Checker.</p>
         <div id="authq-users" class="empty">Đang tải…</div>
       </div>
 
       <div class="split">
-        <div class="card">
-          <h3>Đăng nhập — Maker</h3>
+        <div class="card role-maker">
+          <h3>Bước 1a · Đăng nhập Maker</h3>
           <div class="toolbar">
             <div class="field"><label>Tên đăng nhập</label><input id="authq-maker-username" placeholder="teller1"></div>
             <div class="field"><label>Mật khẩu</label><input id="authq-maker-password" type="password" placeholder="Demo@123"></div>
@@ -570,8 +745,8 @@
           </div>
           <div id="authq-maker-session" class="empty">Chưa đăng nhập.</div>
         </div>
-        <div class="card">
-          <h3>Đăng nhập — Checker</h3>
+        <div class="card role-checker">
+          <h3>Bước 1b · Đăng nhập Checker</h3>
           <div class="toolbar">
             <div class="field"><label>Tên đăng nhập</label><input id="authq-checker-username" placeholder="supervisor1"></div>
             <div class="field"><label>Mật khẩu</label><input id="authq-checker-password" type="password" placeholder="Demo@123"></div>
@@ -581,8 +756,8 @@
         </div>
       </div>
 
-      <div class="card">
-        <h3>Nhập lệnh mới (Maker)</h3>
+      <div class="card role-maker">
+        <h3>Bước 2 · Maker nhập lệnh mới</h3>
         <div class="grid">
           <div class="field"><label>Loại nghiệp vụ *</label>
             <select id="authq-op-type" onchange="fillExamplePayload()">
@@ -608,6 +783,7 @@
 
       <div class="card">
         <h3>Hàng đợi chờ duyệt</h3>
+        <p class="hint" style="margin-top:0;margin-bottom:8px;">Bấm vào 1 dòng để nạp mã hàng đợi xuống khối "Bước 3" bên dưới.</p>
         <div class="toolbar">
           <div class="field"><label>Trạng thái</label><select id="authq-search-status">
             <option value="pending">pending (Đang chờ)</option>
@@ -620,8 +796,8 @@
         <div id="authq-table" class="empty">Chưa có dữ liệu — bấm Tải danh sách.</div>
       </div>
 
-      <div class="card">
-        <h3>Duyệt / Từ chối theo mã</h3>
+      <div class="card role-checker">
+        <h3>Bước 3 · Checker duyệt / từ chối theo mã</h3>
         <div class="toolbar">
           <div class="field"><label>Mã hàng đợi</label><input id="authq-action-id" type="number" min="1"></div>
           <div class="field"><label>Lý do (nếu từ chối)</label><input id="authq-reject-reason" placeholder="Nghi ngờ gian lận..."></div>
@@ -725,11 +901,18 @@ updateClock();
 setInterval(updateClock, 1000);
 
 function toast(msg, ok=true){
+  const duration = ok === "warn" ? 6500 : 4200;
   const el = document.createElement("div");
   el.className = "toast-item " + (ok === "warn" ? "warn" : (ok ? "ok" : "err"));
-  el.textContent = msg;
+  el.style.setProperty("--dur", duration + "ms");
+  const text = document.createElement("span");
+  text.textContent = msg;
+  el.appendChild(text);
   document.getElementById("toast").appendChild(el);
-  setTimeout(()=>el.remove(), ok === "warn" ? 6500 : 4200);
+  setTimeout(()=>{
+    el.classList.add("leaving");
+    el.addEventListener("animationend", ()=>el.remove(), {once:true});
+  }, duration);
 }
 
 async function api(method, path, body, headers){
@@ -800,7 +983,7 @@ function fmtMoney(v){
 // Nhãn tiếng Việt cho tên trường (key) trả về từ API, dùng ở renderKV
 const FIELD_LABELS = {
   customer_id:"Mã khách hàng", full_name:"Họ tên", email:"Email", phone:"Điện thoại",
-  dob:"Ngày sinh", country:"Quốc gia", kyc_status:"Trạng thái KYC", referred_by:"Người giới thiệu",
+  dob:"Ngày sinh", country:"Quốc gia", address:"Địa chỉ", kyc_status:"Trạng thái KYC", referred_by:"Người giới thiệu",
   created_at:"Ngày tạo", updated_at:"Cập nhật lần cuối",
   account_id:"Mã tài khoản", account_type_id:"Loại tài khoản", account_number:"Số tài khoản",
   currency:"Tiền tệ", balance:"Số dư", status:"Trạng thái", opened_at:"Ngày mở", closed_at:"Ngày đóng",
@@ -871,6 +1054,34 @@ function badge(v){
   if(v === null || v === undefined || v === "") return "-";
   const label = STATUS_LABELS[v] || v;
   return `<span class="badge b-${v}" title="${v}">${label}</span>`;
+}
+
+// "+500000.00" / "-200000.00" (từ accountService.getBalanceHistory) -> badge Cộng/Trừ có màu.
+function renderChange(v){
+  if(v === null || v === undefined || v === "") return "-";
+  const isCredit = v.trim().startsWith("+");
+  const amount = fmtMoney(v.replace(/^[+-]/, ""));
+  return `<span class="change-badge ${isCredit ? "change-credit" : "change-debit"}">` +
+    `${isCredit ? "▲ Cộng" : "▼ Trừ"} ${amount}</span>`;
+}
+
+// Mirror đúng balanceEffect()/signedDelta() trong src/services/transactionMath.ts — dùng để tính
+// dấu +/- phía client cho bảng gộp nhiều tài khoản (nơi backend chỉ trả amount không dấu).
+// Bản ghi đảo (transactionService.reverse()) giữ NGUYÊN txn_type như bản gốc nhưng áp dụng balance
+// NGƯỢC DẤU — phải nhận diện qua description "Reversal of transaction #..." rồi đảo dấu lại,
+// nếu không sẽ sai dấu đúng cho riêng giao dịch đảo (từng gây lệch running balance so với balance thật).
+const CREDIT_TXN_TYPES = ["deposit", "interest"];
+const DEBIT_TXN_TYPES = ["withdrawal", "payment", "fee"];
+const REVERSAL_DESCRIPTION_PREFIX = "Reversal of transaction #";
+function signedChangeFor(txn, accountId){
+  let sign;
+  if(txn.txn_type === "transfer") sign = (txn.account_id === accountId) ? -1 : 1;
+  else if(CREDIT_TXN_TYPES.includes(txn.txn_type)) sign = 1;
+  else if(DEBIT_TXN_TYPES.includes(txn.txn_type)) sign = -1;
+  else sign = 1;
+  if((txn.description || "").startsWith(REVERSAL_DESCRIPTION_PREFIX)) sign = -sign;
+  const amount = Number(txn.amount) * sign;
+  return (amount >= 0 ? "+" : "-") + Math.abs(amount).toFixed(2);
 }
 
 function formValues(formEl){
@@ -965,12 +1176,13 @@ function attachMoneyFormatting(){
   });
 }
 
-function renderTable(rows, columns){
+function renderTable(rows, columns, rowClick){
   if(!rows || rows.length === 0) return `<div class="empty">Không có dữ liệu.</div>`;
   const head = columns.map(c=>`<th>${c.label}</th>`).join("");
   const body = rows.map(r=>{
     const cells = columns.map(c=>`<td>${c.render ? c.render(r[c.key], r) : (r[c.key] ?? "-")}</td>`).join("");
-    return `<tr>${cells}</tr>`;
+    const clickAttr = rowClick ? ` class="row-clickable" onclick="${rowClick.fn}(${JSON.stringify(r[rowClick.key])})" title="Bấm để xem chi tiết"` : "";
+    return `<tr${clickAttr}>${cells}</tr>`;
   }).join("");
   return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -1003,8 +1215,19 @@ document.querySelectorAll(".nav-item").forEach(el=>{
     document.getElementById("panel-" + key).classList.add("active");
     document.getElementById("panel-title").textContent = el.textContent;
     document.getElementById("crumb").textContent = "FINCORE › " + el.textContent.toUpperCase();
+    closeSidebar();
   });
 });
+
+// ---- Sidebar di động (drawer trượt trên mobile) ----
+function openSidebar(){
+  document.getElementById("sidebar").classList.add("open");
+  document.getElementById("sidebar-overlay").classList.add("open");
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebar-overlay").classList.remove("open");
+}
 
 // ---- Reference data (shared) ----
 let ACCOUNT_TYPES = [];
@@ -1034,8 +1257,17 @@ async function loadRefData(){
     document.getElementById("dash-fraud").innerHTML = renderTable(fraud.data, [
       {key:"alert_id", label:"Mã"}, {key:"transaction_id", label:"Mã GD"}, {key:"risk_score", label:"Điểm RR"},
       {key:"alert_type", label:"Loại"}, {key:"status", label:"TT", render: badge}
-    ]);
+    ], {fn:"showFraudAlertDetail", key:"alert_id"});
   }catch(e){ /* toast already shown */ }
+}
+
+async function showFraudAlertDetail(alertId){
+  const box = document.getElementById("dash-fraud-detail");
+  box.innerHTML = `<div class="empty">Đang tải chi tiết cảnh báo #${alertId}…</div>`;
+  try{
+    const res = await api("GET", "/fraud-alerts/" + alertId);
+    box.innerHTML = renderKV(res.data);
+  }catch(e){ box.innerHTML = ""; }
 }
 loadRefData();
 loadMerchants();
@@ -1089,7 +1321,8 @@ async function searchCustomers(){
   const res = await api("GET", "/customers?" + qs.toString());
   document.getElementById("customers-table").innerHTML = renderTable(res.data, [
     {key:"customer_id", label:"Mã"}, {key:"full_name", label:"Họ tên"}, {key:"email", label:"Email"},
-    {key:"phone", label:"SĐT"}, {key:"kyc_status", label:"KYC", render: badge}, {key:"country", label:"QG"}
+    {key:"phone", label:"SĐT"}, {key:"kyc_status", label:"KYC", render: badge}, {key:"country", label:"QG"},
+    {key:"address", label:"Địa chỉ"}
   ]);
 }
 
@@ -1113,15 +1346,17 @@ async function loadCustomerDetail(){
   const accountNumberById = {};
   accounts.data.forEach(a => accountNumberById[a.account_id] = a.account_number);
   const perAccount = await Promise.all(
-    accounts.data.map(a => api("GET", `/accounts/${a.account_id}/transactions?size=100`).catch(() => ({data:[]})))
+    accounts.data.map(a => api("GET", `/accounts/${a.account_id}/transactions?size=100`)
+      .then(r => r.data.map(txn => ({...txn, _viewAccountId: a.account_id})))
+      .catch(() => []))
   );
-  const allTxns = perAccount.flatMap(r => r.data)
+  const allTxns = perAccount.flat()
     .sort((a,b) => new Date(b.txn_timestamp) - new Date(a.txn_timestamp));
   document.getElementById("customer-txn-history").innerHTML = renderTable(allTxns, [
     {key:"transaction_id", label:"Mã GD"},
-    {key:"account_id", label:"Số TK", render: v => accountNumberById[v] || v},
+    {key:"_viewAccountId", label:"Số TK", render: v => accountNumberById[v] || v},
     {key:"txn_type", label:"Loại", render: badge},
-    {key:"amount", label:"Số tiền", render: fmtMoney},
+    {key:"amount", label:"Cộng / Trừ", render: (v, row) => renderChange(signedChangeFor(row, row._viewAccountId))},
     {key:"currency", label:"Tiền tệ"},
     {key:"status", label:"TT", render: badge},
     {key:"description", label:"Diễn giải"},
@@ -1170,6 +1405,46 @@ async function updateKyc(){
   const res = await api("PATCH", `/customers/${id}/kyc`, {kyc_status});
   toast("Đã cập nhật KYC khách hàng #" + id + " → " + kyc_status);
   document.getElementById("c-kyc-result").innerHTML = renderKV(res.data);
+}
+
+// ---- Đánh giá điểm tín dụng (mô phỏng kiểu T24 — không phải điểm CIC/bureau thật) ----
+const CREDIT_GRADE_COLOR = {
+  excellent: "var(--ok)", very_good: "var(--ok)", good: "var(--accent-2)", fair: "var(--warn)", poor: "var(--danger)",
+};
+
+function renderCreditScore(d){
+  const pct = Math.max(0, Math.min(100, (d.score - d.score_min) / (d.score_max - d.score_min) * 100));
+  const color = CREDIT_GRADE_COLOR[d.grade] || "var(--info)";
+  const factorsHtml = d.factors.map(f => {
+    const sign = f.points > 0 ? "+" : "";
+    const pColor = f.points > 0 ? "var(--ok)" : (f.points < 0 ? "var(--danger)" : "var(--muted)");
+    return `<div class="cs-factor">` +
+      `<div class="cs-factor-head"><span>${f.label}</span><span style="color:${pColor};">${sign}${f.points}</span></div>` +
+      `<div class="cs-factor-detail">${f.detail}</div>` +
+    `</div>`;
+  }).join("");
+  return `<div class="cs-wrap">` +
+    `<div class="cs-gauge">` +
+      `<div class="cs-score" style="color:${color};">${d.score}</div>` +
+      `<div class="cs-score-sub">Thang điểm ${d.score_min}-${d.score_max}</div>` +
+      `<div class="cs-bar" style="margin-top:10px;"><div class="cs-bar-marker" style="left:${pct}%;"></div></div>` +
+      `<div class="cs-range"><span>${d.score_min} (Yếu)</span><span>${d.score_max} (Xuất sắc)</span></div>` +
+      `<div class="cs-grade" style="background:${color};">${d.grade_label}</div>` +
+    `</div>` +
+    `<div class="cs-recommend"><b>Khuyến nghị:</b> ${d.recommendation}</div>` +
+    `<div class="cs-factors">${factorsHtml}</div>` +
+  `</div>`;
+}
+
+async function loadCreditScore(){
+  const id = document.getElementById("cs-customer-id").value;
+  if(!isPositiveIntStr(id)) return toast("Nhập mã khách hàng hợp lệ (số nguyên dương)", false);
+  const box = document.getElementById("credit-score-result");
+  box.innerHTML = `<div class="empty">Đang chấm điểm…</div>`;
+  let res;
+  try{ res = await api("GET", `/customers/${id}/credit-score`); }
+  catch(e){ box.innerHTML = ""; return; }
+  box.innerHTML = renderCreditScore(res.data);
 }
 
 // ---- eKYC (OCR + đối chiếu khuôn mặt thật, chạy tại trình duyệt bằng face-api.js) ----
@@ -1297,15 +1572,22 @@ async function loadAccountDetail(){
   if(!isPositiveIntStr(id)) return toast("Nhập mã tài khoản hợp lệ (số nguyên dương)", false);
   const res = await api("GET", `/accounts/${id}`);
   const acc = res.data;
-  let html = renderKV(acc);
 
-  // Chi tiết hơn: tra thêm tên khách hàng sở hữu, không chỉ hiện customer_id thô.
+  // Chi tiết hơn: tra thêm tên + địa chỉ khách hàng sở hữu, không chỉ hiện customer_id thô.
   const custRes = await api("GET", `/customers/${acc.customer_id}`).catch(() => null);
-  if(custRes){
+  const cust = custRes?.data;
+
+  let html = renderKV({
+    ...acc,
+    customer_id: cust ? `${acc.customer_id} — ${cust.full_name}` : acc.customer_id,
+  });
+
+  if(cust){
     html += `<div class="card"><h3>Chủ tài khoản</h3><div class="kv-wrap"><div class="kv">` +
-      `<div class="k">Họ tên</div><div>${custRes.data.full_name}</div>` +
-      `<div class="k">Email</div><div>${custRes.data.email}</div>` +
-      `<div class="k">KYC</div><div>${badge(custRes.data.kyc_status)}</div>` +
+      `<div class="k">Họ tên</div><div>${cust.full_name}</div>` +
+      `<div class="k">Email</div><div>${cust.email}</div>` +
+      `<div class="k">Địa chỉ</div><div>${cust.address ?? "-"}</div>` +
+      `<div class="k">KYC</div><div>${badge(cust.kyc_status)}</div>` +
       `</div></div></div>`;
   }
   document.getElementById("account-detail").innerHTML = html;
@@ -1370,7 +1652,9 @@ async function loadBalanceHistory(){
   const res = await api("GET", `/accounts/${id}/balance-history`);
   document.getElementById("account-history").innerHTML = renderTable(res.data, [
     {key:"transaction_id", label:"Mã GD"}, {key:"txn_type", label:"Loại", render: badge},
-    {key:"amount", label:"Số tiền", render: fmtMoney}, {key:"txn_timestamp", label:"Thời gian"}
+    {key:"change", label:"Cộng / Trừ", render: renderChange},
+    {key:"running_balance", label:"Số dư sau GD", render: fmtMoney},
+    {key:"txn_timestamp", label:"Thời gian"}
   ]);
 }
 
@@ -2023,10 +2307,7 @@ function renderSessionBadge(kind){
   const s = AUTHQ_SESSION[kind];
   const el = document.getElementById(`authq-${kind}-session`);
   if(!s){ el.innerHTML = `<span class="empty">Chưa đăng nhập.</span>`; return; }
-  el.innerHTML = `<div class="kv-wrap"><div class="kv">` +
-    `<div class="k">Đang đăng nhập</div><div>${s.user.display_name} (${s.user.username}) — #${s.user.user_id}</div>` +
-    `<div class="k">Vai trò</div><div>${ROLE_LABELS[s.user.role] || s.user.role}</div>` +
-    `</div></div>`;
+  el.innerHTML = `<div class="session-chip">Đang đăng nhập: ${s.user.display_name} (${s.user.username}) — ${ROLE_LABELS[s.user.role] || s.user.role}</div>`;
 }
 
 async function loginAs(kind){
@@ -2079,7 +2360,12 @@ async function searchAuthQueue(){
     {key:"queue_id", label:"Mã"}, {key:"operation_type", label:"Nghiệp vụ", render: v => AUTHQ_OP_LABELS[v] || v},
     {key:"maker_id", label:"Maker"}, {key:"checker_id", label:"Checker"},
     {key:"status", label:"TT", render: badge}, {key:"input_at", label:"Thời gian nhập"}
-  ]);
+  ], {fn:"selectAuthQueueRow", key:"queue_id"});
+}
+
+function selectAuthQueueRow(id){
+  document.getElementById("authq-action-id").value = id;
+  loadAuthQueueDetail();
 }
 
 async function loadAuthQueueDetail(){

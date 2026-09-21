@@ -9,6 +9,7 @@ export interface Customer {
   phone: string | null;
   dob: string | null;
   country: string | null;
+  address: string | null;
   kyc_status: KycStatus;
   referred_by: number | null;
   created_at: string;

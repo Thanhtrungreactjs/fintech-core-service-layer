@@ -66,17 +66,22 @@ export const accountService = {
   async getBalanceHistory(id: number) {
     await this.getById(id);
     const { rows } = await transactionRepository.findByAccount(id, {}, 100000, 0);
+    // rows đã DESC (mới nhất trước) — đảo sang ASC chỉ để dồn running_balance đúng thứ tự
+    // thời gian, rồi đảo lại DESC trước khi trả về (giống mọi danh sách khác trong hệ thống).
     const chronological = [...rows].reverse();
     let running = 0;
-    return chronological.map((txn) => {
-      running += signedDelta(txn, id);
+    const withRunningBalance = chronological.map((txn) => {
+      const change = signedDelta(txn, id);
+      running += change;
       return {
         transaction_id: txn.transaction_id,
         txn_timestamp: txn.txn_timestamp,
         txn_type: txn.txn_type,
         amount: txn.amount,
+        change: (change >= 0 ? "+" : "-") + Math.abs(change).toFixed(2),
         running_balance: running.toFixed(2),
       };
     });
+    return withRunningBalance.reverse();
   },
 };

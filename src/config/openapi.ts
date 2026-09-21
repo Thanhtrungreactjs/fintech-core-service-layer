@@ -47,6 +47,7 @@ const schemas = {
       phone: { type: "string", nullable: true },
       dob: { type: "string", format: "date", nullable: true },
       country: { type: "string", nullable: true },
+      address: { type: "string", nullable: true },
       kyc_status: { type: "string", enum: ["pending", "verified", "rejected"] },
       referred_by: { type: "integer", nullable: true },
       created_at: { type: "string", format: "date-time" },
@@ -313,7 +314,8 @@ export const openapiSpec = {
           properties: {
             full_name: { type: "string" }, email: { type: "string", format: "email" },
             phone: { type: "string", nullable: true }, dob: { type: "string", format: "date", nullable: true },
-            country: { type: "string", nullable: true }, referred_by: { type: "integer", nullable: true },
+            country: { type: "string", nullable: true }, address: { type: "string", nullable: true },
+            referred_by: { type: "integer", nullable: true },
           },
         } } } },
         responses: { "201": { description: "Đã tạo", content: { "application/json": { schema: envelope(schemas.Customer) } } } },
@@ -340,7 +342,7 @@ export const openapiSpec = {
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
         requestBody: { content: { "application/json": { schema: {
           type: "object",
-          properties: { full_name: { type: "string" }, phone: { type: "string", nullable: true }, dob: { type: "string", format: "date", nullable: true }, country: { type: "string", nullable: true } },
+          properties: { full_name: { type: "string" }, phone: { type: "string", nullable: true }, dob: { type: "string", format: "date", nullable: true }, country: { type: "string", nullable: true }, address: { type: "string", nullable: true } },
         } } } },
         responses: { "200": { description: "OK", content: { "application/json": { schema: envelope(schemas.Customer) } } } },
       },
@@ -393,6 +395,25 @@ export const openapiSpec = {
         tags: ["Customers"], summary: "Lịch sử xác minh eKYC của khách hàng",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
         responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({ type: "array", items: schemas.EkycVerification }) } } } },
+      },
+    },
+    "/customers/{id}/credit-score": {
+      get: {
+        tags: ["Customers"], summary: "Đánh giá điểm tín dụng nội bộ (mô phỏng, không phải điểm CIC/bureau thật)",
+        description: "Tổng hợp lịch sử trả nợ, dư nợ đang vay so với số dư tài khoản, độ dài quan hệ, trạng thái KYC và cảnh báo gian lận thành 1 điểm số 300-850 kèm giải thích từng nhân tố — giống cách core banking hiển thị điểm tín dụng phục vụ xét duyệt vay.",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({
+          type: "object",
+          properties: {
+            customer_id: { type: "integer" }, score: { type: "integer" }, score_min: { type: "integer" }, score_max: { type: "integer" },
+            grade: { type: "string", enum: ["excellent", "very_good", "good", "fair", "poor"] },
+            grade_label: { type: "string" }, recommendation: { type: "string" },
+            factors: { type: "array", items: { type: "object", properties: {
+              factor: { type: "string" }, label: { type: "string" }, points: { type: "integer" }, detail: { type: "string" },
+            } } },
+            computed_at: { type: "string", format: "date-time" },
+          },
+        }) } } } },
       },
     },
     "/customers/{id}/loans": {
@@ -450,8 +471,15 @@ export const openapiSpec = {
     "/accounts/{id}/balance-history": {
       get: {
         tags: ["Accounts"], summary: "Lịch sử số dư của tài khoản",
+        description: "Số dư chạy (running balance) suy diễn từ transactions theo thứ tự thời gian tăng dần, kèm `change` (dấu +/- đúng chiều ảnh hưởng lên tài khoản này — 1 giao dịch `transfer` cộng ở tài khoản này nhưng trừ ở tài khoản kia).",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({ type: "array", items: schemas.Transaction }) } } } },
+        responses: { "200": { description: "OK", content: { "application/json": { schema: envelope({
+          type: "array", items: { type: "object", properties: {
+            transaction_id: { type: "integer" }, txn_timestamp: { type: "string", format: "date-time" },
+            txn_type: { type: "string" }, amount: { type: "string", description: "Số tiền gốc, luôn dương" },
+            change: { type: "string", description: "Số tiền có dấu (+/-) đúng chiều ảnh hưởng lên tài khoản này, vd \"-500000.00\"" },
+            running_balance: { type: "string", description: "Số dư chạy dồn ngay sau giao dịch này" },
+          } } }) } } } },
       },
     },
     "/accounts/{id}/cards": {

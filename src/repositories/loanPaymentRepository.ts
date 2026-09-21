@@ -35,6 +35,18 @@ export const loanPaymentRepository = {
     return rows;
   },
 
+  /** Mọi kỳ trả nợ thuộc các loan của 1 khách hàng — dùng cho đánh giá điểm tín dụng. */
+  async findByCustomer(customerId: number): Promise<LoanPayment[]> {
+    const { rows } = await pool.query<LoanPayment>(
+      `SELECT lp.* FROM loan_payments lp
+       JOIN loans l ON l.loan_id = lp.loan_id
+       WHERE l.customer_id = :customerId
+       ORDER BY lp.due_date`,
+      { customerId }
+    );
+    return rows;
+  },
+
   async bulkCreate(rowsInput: CreateLoanPaymentInput[], exec: Executor): Promise<void> {
     if (rowsInput.length === 0) return;
     const values = rowsInput

@@ -13,6 +13,7 @@ export interface CreateCustomerInput {
   phone?: string | null;
   dob?: string | null;
   country?: string | null;
+  address?: string | null;
   referred_by?: number | null;
 }
 
@@ -21,6 +22,7 @@ export interface UpdateCustomerInput {
   phone?: string | null;
   dob?: string | null;
   country?: string | null;
+  address?: string | null;
 }
 
 export const customerRepository = {
@@ -79,8 +81,8 @@ export const customerRepository = {
 
   async create(input: CreateCustomerInput): Promise<Customer> {
     const { rows } = await pool.query<Customer>(
-      `INSERT INTO customers (full_name, email, phone, dob, country, referred_by)
-       VALUES (:full_name, :email, :phone, :dob, :country, :referred_by)
+      `INSERT INTO customers (full_name, email, phone, dob, country, address, referred_by)
+       VALUES (:full_name, :email, :phone, :dob, :country, :address, :referred_by)
        RETURNING *`,
       {
         full_name: input.full_name,
@@ -88,6 +90,7 @@ export const customerRepository = {
         phone: input.phone ?? null,
         dob: input.dob ?? null,
         country: input.country ?? null,
+        address: input.address ?? null,
         referred_by: input.referred_by ?? null,
       }
     );
