@@ -372,17 +372,49 @@ Ký hiệu preconditions: `[Acc-VND-1]`, `[Acc-VND-2]`, `[Acc-USD]` = các accou
 | TC-AUTH-017 | Lọc hàng đợi theo trạng thái | `GET /auth-queue?status=pending` | 200, chỉ trả đúng trạng thái | `SELECT COUNT(*) FROM public.auth_queue WHERE status='pending';` → khớp `meta.total` | P2 |
 | TC-AUTH-018 | Danh sách user không lộ mật khẩu | `GET /users` | 200, không có trường `password_hash` trong bất kỳ bản ghi nào | `SELECT COUNT(*) FROM public.app_users;` → đối chiếu số lượng bản ghi (5), không đối chiếu `password_hash` (API không trả trường này) | P1 |
 
-### 7.12 FR-COB — Batch cuối ngày
+### 7.12 FR-COB — Batch cuối ngày (test job / scheduled job)
+
+**"Test job" trong hệ thống này nghĩa là gì?** Toàn hệ thống chỉ có đúng 1 job chạy nền theo
+lịch: **COB (Close of Business)** — bản mô phỏng batch cuối ngày mà lõi ngân hàng thật (T24,
+Flexcube...) luôn chạy tự động mỗi đêm sau giờ giao dịch. Mục này giải thích job chạy như thế
+nào và cách kiểm thử nó, để trả lời được câu hỏi phỏng vấn kiểu "mô tả cách bạn test 1 batch
+job/scheduled job".
+
+**Job này làm gì (`src/services/cobService.ts`, hàm `run(asOfDate?)`)** — chạy tuần tự 3 bước,
+mỗi bước tự truy vấn "cái gì ĐANG đến hạn tính đến ngày `asOf`" rồi xử lý hàng loạt bằng đúng
+service nghiệp vụ đã có (không viết lại business rule riêng cho batch):
+1. Sổ tiết kiệm có `maturity_date <= asOf` và còn `active` → tự gọi `termDepositService.mature()`.
+2. Khoản vay có kỳ trả nợ quá hạn `> 90 ngày` → chuyển `loans.status = 'defaulted'` (chuẩn Basel).
+3. Thẻ đang `active`/`blocked` có `expiry_date <= asOf` → chuyển `cards.status = 'expired'`.
+
+**2 đường trigger, dùng chung đúng 1 hàm** (đây là điểm quan trọng nhất khi test — sửa/test 1
+lần là chắc chắn cả 2 đường đều đúng, không lệch nhau):
+- **Tự động**: `node-cron` chạy theo lịch cấu hình ở biến môi trường `COB_CRON_SCHEDULE` (mặc
+  định `0 0 * * *` — 0h mỗi ngày), khai báo ở `src/jobs/cobScheduler.ts`.
+- **Thủ công**: `POST /cob/run` (body tùy chọn `{ as_of_date }`) — dùng để QA/demo trigger ngay
+  lập tức, không phải đợi tới nửa đêm.
+
+**4 đặc tính bắt buộc phải kiểm tra khi test bất kỳ batch/scheduled job nào** (áp dụng cụ thể
+vào COB):
+
+| Đặc tính cần test | COB làm đúng như thế nào | Cách verify |
+|---|---|---|
+| **Idempotent** — chạy lại nhiều lần không xử lý trùng | Mỗi bước tự query "đang active/chưa xử lý VÀ đã đến hạn" tại thời điểm chạy — không dựa vào cờ "đã chạy hôm nay chưa", nên bản ghi đã xử lý xong sẽ tự động không xuất hiện lại ở lần chạy sau | TC-COB-009: chạy `/cob/run` 2 lần liên tiếp, lần 2 phải ra số liệu rỗng cho phần đã xử lý ở lần 1 |
+| **Resilient theo từng bản ghi** — 1 lỗi không sập cả batch | Vòng lặp đáo hạn sổ tiết kiệm có `try/catch` riêng từng sổ (`cobService.ts:50-62`); lỗi bị gom vào `matured_errors`, các sổ khác vẫn xử lý tiếp | TC-COB-006: xem `details.matured_errors` trong 1 lần chạy có lỗi cục bộ |
+| **Audit trail đầy đủ** — biết chính xác job đã làm gì, khi nào | Mỗi lần chạy ghi 1 dòng vào `cob_runs` (ngày chạy, số liệu tổng hợp, `status`, `details` JSON liệt kê từng ID đã xử lý) | TC-COB-005, TC-COB-006 |
+| **Test được không cần chờ thời gian thực trôi qua** | Tham số `as_of_date` cho phép "giả lập" job chạy vào 1 ngày trong tương lai — kỹ thuật bắt buộc phải có khi test bất kỳ job nào phụ thuộc ngày tháng, nếu không QA phải chờ thật sự tới ngày đó mới test được | Toàn bộ TC-COB-002 → 004, 008 đều dùng kỹ thuật này thay vì chờ ngày thật |
 
 | ID | Tiêu đề | Bước / Dữ liệu | Kết quả mong đợi | Kiểm chứng qua DB (SQL) | Ưu tiên |
 |---|---|---|---|---|---|
-| TC-COB-001 | Chạy COB không có gì đến hạn | `POST /cob/run` khi không có sổ/vay đến hạn | 201, `term_deposits_matured=0`, `loans_marked_defaulted=0`, `status=completed` | `SELECT * FROM public.cob_runs WHERE cob_run_id=:id;` | P2 |
+| TC-COB-001 | Chạy COB không có gì đến hạn | `POST /cob/run` khi không có sổ/vay/thẻ đến hạn | 201, `term_deposits_matured=0`, `loans_marked_defaulted=0`, `status=completed` | `SELECT * FROM public.cob_runs WHERE cob_run_id=:id;` | P2 |
 | TC-COB-002 | Tự động đáo hạn sổ tiết kiệm | Mở sổ với `start_date` quá khứ để `maturity_date` ≤ hôm nay, rồi chạy COB | Sổ tự chuyển `matured` (không cần gọi `/mature` tay) | `SELECT status, closed_date FROM public.term_deposits WHERE term_deposit_id=:id;` → `matured` | P1 |
 | TC-COB-003 | **Biên nợ xấu — đúng 90 ngày** | Khoản vay có kỳ quá hạn đúng 90 ngày | **Không** chuyển `defaulted` (điều kiện `>90`, không phải `≥90`) | `SELECT status FROM public.loans WHERE loan_id=:id;` → vẫn `active`; `SELECT CURRENT_DATE - due_date AS days_overdue FROM public.loan_payments WHERE loan_id=:id AND paid_date IS NULL;` → xác nhận đúng 90 | P1 |
 | TC-COB-004 | **Biên nợ xấu — 91 ngày** | Khoản vay có kỳ quá hạn 91 ngày | Chuyển `status=defaulted` | `SELECT status FROM public.loans WHERE loan_id=:id;` → `defaulted` | P1 |
 | TC-COB-005 | Log lịch sử chạy | `GET /cob/runs` sau vài lần chạy | 200, mỗi lần chạy có `run_date`, số liệu đúng | `SELECT cob_run_id, run_date, term_deposits_matured, loans_marked_defaulted FROM public.cob_runs ORDER BY cob_run_id DESC;` | P2 |
-| TC-COB-006 | Xem chi tiết 1 lần chạy | `GET /cob/runs/:id` | 200, `details` JSON có danh sách sổ/vay đã xử lý | `SELECT details FROM public.cob_runs WHERE cob_run_id=:id;` | P3 |
+| TC-COB-006 | Xem chi tiết 1 lần chạy | `GET /cob/runs/:id` | 200, `details` JSON có danh sách sổ/vay/thẻ đã xử lý (và `matured_errors` nếu có lỗi cục bộ) | `SELECT details FROM public.cob_runs WHERE cob_run_id=:id;` | P3 |
 | TC-COB-007 | COB tự động theo cron *(kiểm thử tích hợp)* | Đặt `COB_CRON_SCHEDULE=* * * * *`, khởi động lại server, đợi 1 phút | Log server tự in "Hoàn tất #..." không cần gọi API tay | `SELECT MAX(cob_run_id), MAX(started_at) FROM public.cob_runs;` → xuất hiện dòng mới không do QA gọi API | P3 |
+| TC-COB-008 | Tự động chuyển thẻ hết hạn | Phát hành thẻ (`expiry_date` = ngày mai, vì API chặn phát hành thẻ hết hạn ngay từ đầu), rồi chạy `POST /cob/run {as_of_date: "<ngày mốt>"}` để giả lập đã qua ngày hết hạn | Thẻ tự chuyển `expired`, `expired_cards` trong response có ID thẻ này | `SELECT status FROM public.cards WHERE card_id=:id;` → `expired` | P1 |
+| TC-COB-009 | **Chạy COB 2 lần liên tiếp (idempotency toàn batch)** | Chạy `/cob/run` khi đang có sổ/vay/thẻ thật sự đến hạn (lần 1 xử lý được), gọi `/cob/run` lần 2 ngay sau đó cùng `as_of_date` | Lần 2: `term_deposits_matured=0`, `loans_marked_defaulted=0`, `expired_cards=[]` — không xử lý trùng lại các bản ghi lần 1 đã xử lý xong | `SELECT COUNT(*) FROM public.cob_runs WHERE run_date=:asOf;` → **2 dòng** (2 lần chạy đều được ghi log), nhưng `SELECT status FROM public.term_deposits/loans/cards WHERE ...` → trạng thái giữ nguyên như sau lần 1, không đổi thêm | P1 |
 
 ### 7.13 FR-UI — Giao diện quản trị *(smoke test)*
 
