@@ -7,7 +7,64 @@
 | **Ngày** | 2026-09-15 |
 | **Cách dùng** | Không học thuộc lòng — hiểu bản chất rồi **kể lại bằng chính ví dụ trong dự án này**. Nhà tuyển dụng phân biệt rất rõ người học vẹt lý thuyết và người đã thực sự "sờ" vào một hệ thống ngân hàng thật, dù chỉ là bản demo. |
 
-> Tài liệu tham chiếu cùng bộ: `SRS.md` (đặc tả hệ thống), `TEST_DESIGN.md` (146 test case + SQL), `ANSWER_KEY.md` (đáp án mẫu). Khi phỏng vấn hỏi sâu, có thể mở các file này ra minh hoạ trực tiếp.
+> Tài liệu tham chiếu cùng bộ: `SRS.md` (đặc tả hệ thống), `TEST_DESIGN.md` (159 test case + SQL), `ANSWER_KEY.md` (đáp án mẫu). Khi phỏng vấn hỏi sâu, có thể mở các file này ra minh hoạ trực tiếp.
+
+---
+
+## PHẦN 0 — Trả lời sẵn theo đúng đề "Test MB" (đọc là dùng được)
+
+> Mục này bám sát đúng thứ tự và đúng câu chữ trong bộ câu hỏi test thật của MB — để lúc ngồi test/phỏng vấn, câu nào cũng đã có sẵn trong đầu, không phải tra cứu. Các câu cần đào sâu lý thuyết đã dẫn link sang Phần A-H tương ứng, tránh lặp nội dung.
+
+### Câu hỏi mở đầu (giới thiệu kinh nghiệm bản thân)
+
+*4 câu này hỏi về **kinh nghiệm thật của chính em** — tài liệu này không thể bịa thay câu trả lời, vì nhà tuyển dụng sẽ hỏi xoáy tiếp ngay khi thấy chi tiết không khớp. Dưới đây là khung để tự điền, không phải đáp án dựng sẵn:*
+
+1. **"Em đã thực hiện những công việc gì ở công ty cũ?"** — Liệt kê 2-3 việc cụ thể, ưu tiên việc có con số/kết quả đo được (vd "viết được X test case cho module Y", "phát hiện Z bug nghiêm trọng trước khi release"), không nói chung chung kiểu "em test đủ thứ".
+2. **"Em tâm đắc dự án nào nhất? Vì sao?"** — Chọn ĐÚNG 1 dự án, nêu rõ lý do gắn với **kỹ năng học được** chứ không phải "dự án lớn/nổi tiếng". Nếu công ty cũ chưa có dự án ngân hàng, có thể nói thêm: *"Song song với công việc, em cũng tự tay xây 1 hệ thống core banking mô phỏng kiểu T24 (module Tài khoản, Tiền gửi, Cho vay, Sổ cái kế toán kép, Maker-Checker) để luyện tư duy domain ngân hàng — vì em biết nếu chỉ có kinh nghiệm test app thường thì chưa đủ để làm tester ngân hàng."* (câu này an toàn để nói vì là sự thật — dự án chính là hệ thống trong tài liệu này).
+3. **"Qua mỗi dự án, em đã học hỏi được những gì?"** — Trả lời theo cặp "vấn đề gặp phải → bài học rút ra", không liệt kê kỹ năng khô khan. Có thể mượn 1 trong 3 câu chuyện bug thật ở **Phần E** làm ví dụ nếu chưa có ví dụ từ công ty cũ.
+4. **"Thành tích/dấu ấn nổi bật?"** — Không có thì thành thật nói chưa có, rồi chuyển hướng sang điều đang chủ động làm để tiến bộ (vd nhắc lại dự án tự xây ở câu 2) — nhà tuyển dụng đánh giá cao tinh thần chủ động hơn là một danh hiệu.
+
+### PHẦN II: Kiến thức nền tảng & quy trình kiểm thử
+
+**1. "Quy trình kiểm thử phần mềm gồm những bước nào?"**
+
+> *"Em làm theo STLC — Software Testing Life Cycle: Phân tích yêu cầu (đọc kỹ SRS/đặc tả nghiệp vụ) → Lập kế hoạch test (xác định phạm vi, tiêu chí pass/fail) → Thiết kế test case (áp dụng các kỹ thuật như Equivalence Partitioning, Boundary Value, State Transition...) → Chuẩn bị môi trường & dữ liệu test → Thực thi test → Báo cáo/theo dõi bug → Đóng test (Test Closure). Ví dụ cụ thể em từng làm: với dự án core banking em tự xây, em viết `SRS.md` đặc tả nghiệp vụ trước, từ đó ra `TEST_DESIGN.md` với 159 test case theo đúng quy trình này — mỗi test case không chỉ có bước thực hiện mà còn có câu SQL kiểm chứng trực tiếp trên database."* (chi tiết kỹ thuật thiết kế: mục A.4; bộ tài liệu tương ứng từng bước STLC: mục A.5)
+
+**2. "Phân biệt Black-box và White-box. Em thường dùng phương pháp nào?"**
+
+> *"Black-box là test theo hành vi — chỉ quan tâm input/output qua API hoặc UI, không cần đọc source code. White-box là dựa vào việc đọc code để thiết kế test, biết rõ luồng xử lý bên trong. Trong công việc em chủ yếu dùng **Black-box** vì đó là cách test đúng góc nhìn người dùng cuối, nhưng em cũng kết hợp đọc code khi cần — gọi là **Gray-box** — để test chính xác hơn. Ví dụ: khi viết test case cho ngưỡng cảnh báo gian lận, nếu chỉ đoán mù em có thể test sai ranh giới; em đọc thẳng code service để biết chính xác điều kiện là `amount > threshold` (dùng dấu `>` chứ không phải `>=`), nên viết đúng 2 case biên: đúng bằng ngưỡng (không cảnh báo) và hơn ngưỡng 1 đồng (có cảnh báo) — nếu đoán mò rất dễ viết sai chiều biên."* (bảng so sánh đầy đủ: mục A.8)
+
+### PHẦN III: Kiểm thử API
+
+**1. "Công cụ test API và quy trình test 1 API diễn ra như thế nào?"**
+
+> *"Công cụ em quen dùng nhất là Postman. Trong dự án tự xây gần đây em còn thao tác trực tiếp qua Swagger UI (OpenAPI docs tự sinh từ code — `/docs`) để xem chính xác từng endpoint nhận field gì, trả về schema gì, rồi from đó gọi thử ngay trên trang đó; với các luồng cần kiểm tra nhiều bước liên tiếp hoặc cần verify UI+API cùng lúc thì em dùng script (Node fetch/Playwright) để tự động hoá lại, tránh phải bấm tay lặp lại nhiều lần. Quy trình: (1) đọc spec/API design để biết rõ input, output, mã lỗi mong đợi; (2) thiết kế test case cho từng endpoint — case hợp lệ, case sai dữ liệu, case vi phạm business rule, case sai quyền; (3) gọi thử qua công cụ, đối chiếu status code + response body với kỳ vọng; (4) **verify thêm ở tầng database** để chắc chắn response không "nói dối" — đây là thói quen em luôn giữ khi test hệ thống tài chính."* (bảng HTTP method/status: mục C.1)
+
+**2. "Khi test 1 API, em xây dựng Test Case Function như thế nào?"**
+
+> *"Em đi theo checklist cố định cho mỗi endpoint, không bỏ sót nhóm nào: (1) **Happy path** — dữ liệu hợp lệ, kỳ vọng thành công; (2) **Validation error** — thiếu field bắt buộc, sai kiểu dữ liệu, sai định dạng; (3) **Business rule violation** — dữ liệu đúng format nhưng phạm luật nghiệp vụ, ví dụ rút quá số dư; (4) **Boundary case** — đúng ranh giới cho phép; (5) **Security/permission case** — gọi thiếu token, gọi với quyền thấp hơn yêu cầu; (6) **Idempotency/side-effect case** riêng cho API tài chính — gọi lại đúng request 2 lần có bị ghi trùng dữ liệu không. Ví dụ cụ thể: với API `POST /transactions` (tạo giao dịch), em viết đủ 20 test case theo đúng 6 nhóm này — không chỉ test 'tạo giao dịch thành công' mà còn test currency không khớp tài khoản, tự chuyển khoản cho chính mình, thiếu Idempotency-Key, gọi lặp 2 lần cùng key..."* (danh sách đầy đủ: `TEST_DESIGN.md` mục 7.5 FR-TXN — kỹ thuật thiết kế nền: mục A.4)
+
+### PHẦN IV: Kiểm thử Database & SQL
+
+**1. "Trong quá trình test, em có kiểm tra trực tiếp trên Database (SQL) không?"**
+
+> *"Có, và với hệ thống tài chính em coi đây là bước **bắt buộc**, không phải tuỳ chọn. Lý do: response API là do chính đoạn code đang được test trả về — nếu tầng ghi dữ liệu có bug nhưng response vẫn "trông đúng", chỉ tin response sẽ không bao giờ phát hiện ra. Trong bộ 159 test case em viết cho dự án tự xây, **mọi test case đều có sẵn 1 cột 'Kiểm chứng qua DB'** — với endpoint có ghi dữ liệu thì bắt buộc phải là 1 câu SQL thật, kể cả test case âm (input sai, mong đợi bị từ chối) cũng phải có SQL xác nhận không có bản ghi nào bị ghi ngầm vào DB trước khi bị chặn, không được chỉ tin vào mã lỗi trả về. Chỉ những endpoint thuần `GET` (không có đường ghi) mới được ghi rõ lý do 'không cần' thay vì SQL, và phải nêu rõ lý do chứ không được để trống."*
+
+**2. "Nếu có, em thường dùng câu lệnh/thao tác nào để đảm bảo tính toàn vẹn dữ liệu?"**
+
+> *"Em nhóm lại thành 4 kiểu thao tác chính, mỗi kiểu trả lời 1 câu hỏi khác nhau:"*
+- **Đối chiếu giá trị đơn giản** — `SELECT balance FROM accounts WHERE account_id = :id;` sau khi gọi API, so khớp đúng số tiền kỳ vọng.
+- **`COUNT(*)` để phát hiện ghi trùng** — ví dụ kiểm thử idempotency: gọi cùng 1 request 2 lần với cùng `Idempotency-Key`, rồi `SELECT COUNT(*) FROM transactions WHERE account_id = :id;` phải **không tăng thêm** ở lần gọi thứ 2, dù response trả về `200` bình thường.
+- **`GROUP BY` + `SUM` để kiểm bất biến kế toán** — với sổ cái kế toán kép, câu lệnh quan trọng nhất em luôn chạy là `SELECT entry_side, SUM(amount) FROM gl_entries GROUP BY entry_side;` — tổng Nợ phải luôn bằng tổng Có, sai lệch dù 1 đồng cũng là bug nghiêm trọng.
+- **So sánh trạng thái trước/sau (before-after)** — với test case âm, chạy `SELECT ... WHERE id=:id;` **trước** khi gọi API để lưu lại giá trị gốc, gọi API (mong đợi bị từ chối), rồi chạy lại đúng câu đó **sau** để xác nhận **không có gì thay đổi** — đây là cách chắc chắn nhất tránh bỏ sót lỗi "báo từ chối cho có nhưng vẫn âm thầm ghi dữ liệu".
+
+*(bảng SQL mẫu đầy đủ: mục C.2 — nếu bị hỏi thêm về bảo mật dữ liệu SQL, xem mục C.3)*
+
+### PHẦN V: Sau khi làm xong bài test
+
+Làm xong bài test kỹ thuật, chủ động hỏi lại 2 câu này trước khi kết thúc buổi — thể hiện tinh thần cầu thị và chủ động, nhà tuyển dụng đánh giá cao:
+- *"Anh/chị có nhận xét gì về bài làm của em, hoặc có điểm nào cần góp ý thêm không ạ?"*
+- *"Khi nào em có thể join dự án ạ?"* (nếu sẵn sàng đi sớm, nói rõ luôn — đây là lợi thế cạnh tranh thật, đừng ngại nói).
 
 ---
 
