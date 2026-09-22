@@ -3,10 +3,12 @@
 
 | | |
 |---|---|
-| **Phiên bản** | 1.0 |
-| **Ngày** | 2026-09-15 |
+| **Phiên bản** | 1.1 |
+| **Ngày** | 2026-09-18 |
 | **Tài liệu tham chiếu** | `SRS.md` / `SRS.pdf` (đặc tả yêu cầu — cùng thư mục dự án) |
 | **Đối tượng sử dụng** | QA kiểm thử API/nghiệp vụ (thủ công hoặc tự động hoá qua script) |
+
+> **Cập nhật 2026-09-18 (v1.1)**: bổ sung mục 7.15 **FR-CREDIT — Đánh giá điểm tín dụng** (tính năng mới, chưa có trong `SRS.md` gốc) và 3 test case địa chỉ khách hàng (`TC-CUST-015…017`, theo cột `address` mới thêm vào `customers`). Xem chi tiết thay đổi schema tại `db/migrations/010_customer_address.sql`.
 
 ---
 
@@ -14,7 +16,7 @@
 
 ### 1.1 Mục đích
 
-Tài liệu đặc tả **thiết kế kiểm thử** (test design) cho toàn bộ 14 module chức năng của hệ thống, gồm: chiến lược kiểm thử, môi trường/dữ liệu cần chuẩn bị, và danh sách **146 test case** cụ thể (mã lỗi, dữ liệu vào, kết quả mong đợi, **câu lệnh SQL kiểm chứng trực tiếp trong DB**) — đủ chi tiết để QA thực thi qua REST client (curl/Postman/script) **và** xác nhận độc lập ở tầng dữ liệu, không chỉ tin vào response API.
+Tài liệu đặc tả **thiết kế kiểm thử** (test design) cho toàn bộ 15 module chức năng của hệ thống (14 module theo `SRS.md` mục 4 + 1 module **FR-CREDIT** mới bổ sung, chưa có trong SRS gốc), gồm: chiến lược kiểm thử, môi trường/dữ liệu cần chuẩn bị, và danh sách **159 test case** cụ thể (mã lỗi, dữ liệu vào, kết quả mong đợi, **câu lệnh SQL kiểm chứng trực tiếp trong DB**) — đủ chi tiết để QA thực thi qua REST client (curl/Postman/script) **và** xác nhận độc lập ở tầng dữ liệu, không chỉ tin vào response API.
 
 > **Lưu ý quan trọng về schema DB**: dự án Supabase này có 2 schema chứa bảng trùng tên (`public` và `t24`) — `t24` là dữ liệu có sẵn từ trước, **không liên quan** tới hệ thống trong tài liệu này. Toàn bộ câu lệnh SQL dưới đây đã ghi rõ tiền tố `public.` — chạy đúng theo đó để tránh nhầm sang schema `t24`.
 
@@ -213,6 +215,9 @@ Ký hiệu preconditions: `[Acc-VND-1]`, `[Acc-VND-2]`, `[Acc-USD]` = các accou
 | TC-CUST-012 | Xem accounts của khách hàng | `GET /:id/accounts` | 200 | `SELECT account_id, balance FROM public.accounts WHERE customer_id=:id;` | P3 |
 | TC-CUST-013 | Tạo khoản vay thiếu Idempotency-Key | `POST /:id/loans` không header | 400 `IDEMPOTENCY_KEY_REQUIRED` | `SELECT COUNT(*) FROM public.loans WHERE customer_id=:id;` → `=0` | P1 |
 | TC-CUST-014 | Tạo khoản vay lặp lại đúng key | Gọi 2 lần cùng key+body | Lần 2 trả **cùng `loan_id`**, không tạo bản ghi/giải ngân mới | `SELECT COUNT(*) FROM public.loans WHERE customer_id=:id;` → `=1` (không phải 2); `SELECT balance FROM public.accounts WHERE account_id=:acc;` → chỉ +principal đúng 1 lần; `SELECT COUNT(*) FROM public.idempotency_keys WHERE idempotency_key=:key;` → `=1` | P1 |
+| TC-CUST-015 | Tạo khách hàng kèm địa chỉ hợp lệ *(mới — cột `address`, `db/migrations/010_customer_address.sql`)* | `POST /customers {..., address:"123 Đường Láng, Đống Đa, Hà Nội"}` | 201, response có đúng `address` vừa nhập | `SELECT address FROM public.customers WHERE customer_id=:id;` → khớp chuỗi đã gửi | P2 |
+| TC-CUST-016 | Địa chỉ vượt quá độ dài cho phép (boundary) | `address` = chuỗi 256 ký tự (giới hạn cột là `VARCHAR(255)`, Zod `max(255)`) | 422 `VALIDATION_ERROR`, không tạo được khách hàng | `SELECT COUNT(*) FROM public.customers WHERE email=:email;` → `=0` (chưa từng ghi) | P2 |
+| TC-CUST-017 | Cập nhật địa chỉ khách hàng | `PATCH /customers/:id {address:"456 Trần Duy Hưng, Cầu Giấy, Hà Nội"}` | 200, `address` đã đổi | `SELECT address, updated_at FROM public.customers WHERE customer_id=:id;` → `address` mới, `updated_at` mới hơn trước | P3 |
 
 ### 7.3 FR-ACC — Tài khoản
 
@@ -433,6 +438,23 @@ vào COB):
 | TC-DOC-001 | Swagger UI tải được | Mở `http://localhost:3000/docs` | 200, hiển thị đủ 14 nhóm tag | *(không cần)* | P2 |
 | TC-DOC-002 | Thử 1 endpoint qua "Try it out" | Chọn `GET /account-types` → Execute | Trả đúng response như gọi trực tiếp | `SELECT * FROM public.account_types;` | P3 |
 
+### 7.15 FR-CREDIT — Đánh giá điểm tín dụng *(mới, bổ sung sau SRS gốc — xem `src/services/creditScoreService.ts`)*
+
+`GET /customers/:id/credit-score` chỉ **đọc** dữ liệu sẵn có (loans, loan_payments, accounts, fraud_alerts, customers) rồi tính ra 1 điểm số 300–850 (base 550) — không ghi DB. Vì vậy mọi test case đều là kiểm tra **công thức tính toán**: cột "Kiểm chứng qua DB" liệt kê SQL lấy đúng dữ liệu đầu vào để QA tự tính tay rồi so khớp với `factors[]`/`score` trả về, không phải kiểm tra ghi/không ghi như các module khác.
+
+| ID | Tiêu đề | Bước / Dữ liệu | Kết quả mong đợi | Kiểm chứng qua DB (SQL) | Ưu tiên |
+|---|---|---|---|---|---|
+| TC-CREDIT-001 | Khách hàng không tồn tại | `GET /customers/999999/credit-score` | 404 `CUSTOMER_NOT_FOUND` | *(không cần — GET, không có đường ghi)* | P2 |
+| TC-CREDIT-002 | Khách hàng chưa từng vay | Khách hàng mới, không có `loans` | 200, factor `payment_history` có `points=0`, `detail` nêu rõ "chưa từng vay" | `SELECT COUNT(*) FROM public.loans WHERE customer_id=:id;` → `=0` | P1 |
+| TC-CREDIT-003 | Lịch sử trả nợ 100% đúng hạn | Toàn bộ `loan_payments` của khách hàng có `paid_date <= due_date` | `payment_history.points = +150` (tối đa, `ratio=1.0` → `(1-0.5)×300`) | `SELECT due_date, paid_date FROM public.loan_payments lp JOIN public.loans l ON l.loan_id=lp.loan_id WHERE l.customer_id=:id;` → tự đếm on-time/trễ/quá hạn rồi tính `(on_time/total-0.5)×300` | P1 |
+| TC-CREDIT-004 | Có khoản vay `defaulted` | 1 `loans.status='defaulted'` | Factor `defaulted_loans` xuất hiện, `points = -80` (mỗi khoản, tối đa `-150`) | `SELECT COUNT(*) FROM public.loans WHERE customer_id=:id AND status='defaulted';` → nhân `80`, chặn trần `150` | P1 |
+| TC-CREDIT-005 | KYC `verified` so với `pending` | So sánh điểm 2 khách hàng chỉ khác `kyc_status` | Khách `verified` cao hơn khách `pending` đúng **30 điểm** (factor `kyc_status`) | `SELECT kyc_status FROM public.customers WHERE customer_id IN (:id1,:id2);` | P2 |
+| TC-CREDIT-006 | KYC `rejected` | `customers.kyc_status='rejected'` | Factor `kyc_status` = **`-100`** điểm (rủi ro danh tính nghiêm trọng) | `SELECT kyc_status FROM public.customers WHERE customer_id=:id;` → `rejected` | P1 |
+| TC-CREDIT-007 | Có cảnh báo gian lận đã xác nhận | ≥1 `fraud_alerts.status='closed_confirmed'` trên giao dịch của khách hàng | Factor `fraud_alerts` âm, `-60`/cảnh báo xác nhận (trần `-150`) + `-15`/cảnh báo `open`/`reviewing` (trần `-60`) | `SELECT fa.status, COUNT(*) FROM public.fraud_alerts fa JOIN public.transactions t ON t.transaction_id=fa.transaction_id JOIN public.accounts a ON a.account_id=t.account_id WHERE a.customer_id=:id GROUP BY fa.status;` | P1 |
+| TC-CREDIT-008 | Tài khoản bị đóng băng/đóng | ≥1 `accounts.status IN ('frozen','closed')` | Factor `account_status` xuất hiện, `-20`/tài khoản (trần `-60`) | `SELECT COUNT(*) FROM public.accounts WHERE customer_id=:id AND status IN ('frozen','closed');` | P2 |
+| TC-CREDIT-009 | **Điểm luôn trong khoảng 300–850 (clamp)** | Khách hàng cộng dồn nhiều yếu tố âm (nợ xấu + KYC rejected + gian lận xác nhận + tài khoản đóng băng) | `score` không bao giờ `< 300` dù tổng điểm trừ lý thuyết âm hơn | Tự cộng tay toàn bộ `points` trong `factors[]` — nếu tổng `< 300` thì `score` trả về phải đúng **`= 300`** (bị chặn dưới, không âm hơn) | P1 |
+| TC-CREDIT-010 | Xếp hạng (`grade`) đúng ngưỡng | Dựng/chọn khách hàng có `score` quanh các mốc `800/740/670/580` | `grade` đổi đúng tại ngưỡng: `≥800 excellent`, `≥740 very_good`, `≥670 good`, `≥580 fair`, còn lại `poor`; `recommendation` khớp `grade` | *(không có bảng lưu điểm — đối chiếu trực tiếp `score`/`grade` trong response với bảng ngưỡng nêu ở cột bên trái)* | P2 |
+
 ---
 
 ## 8. Ma trận truy vết (Traceability Summary)
@@ -440,7 +462,7 @@ vào COB):
 | Module (SRS) | Số test case | Khoảng ID |
 |---|---|---|
 | 4.1 FR-REF | 5 | TC-REF-001…005 |
-| 4.2 FR-CUST | 14 | TC-CUST-001…014 |
+| 4.2 FR-CUST | 17 | TC-CUST-001…017 |
 | 4.3 FR-ACC | 11 | TC-ACC-001…011 |
 | 4.4 FR-CARD | 5 | TC-CARD-001…005 |
 | 4.5 FR-TXN | 20 | TC-TXN-001…020 |
@@ -453,7 +475,8 @@ vào COB):
 | 4.12 FR-COB | 7 | TC-COB-001…007 |
 | 4.13 FR-UI | 5 | TC-UI-001…005 |
 | 4.14 FR-DOC | 2 | TC-DOC-001…002 |
-| **Tổng** | **146** | |
+| FR-CREDIT *(mới, ngoài SRS gốc)* | 10 | TC-CREDIT-001…010 |
+| **Tổng** | **159** | |
 
 ---
 
@@ -464,3 +487,4 @@ vào COB):
 - **TC-GL-002 là bất biến xuyên suốt**: khuyến nghị chèn bước gọi `GET /gl/trial-balance` sau **mỗi nhóm module** (không chỉ 1 lần cuối) để khoanh vùng chính xác thao tác nào (nếu có) làm lệch sổ cái.
 - **TC-COB-007** cần khởi động lại server với biến môi trường khác — nên tách chạy riêng, không nằm trong bộ smoke test thường xuyên.
 - Môi trường Supabase dùng chung — tránh chạy song song 2 bộ test cùng lúc gây nhiễu dữ liệu số dư giữa các test case.
+- **FR-CREDIT phụ thuộc dữ liệu của FR-LOAN/FR-FRAUD/FR-ACC**: chạy nhóm FR-CREDIT **sau** khi đã có dữ liệu từ các nhóm đó (loan đã tạo + có kỳ trả nợ, fraud alert đã xác nhận, account đã đổi trạng thái) — nếu chạy riêng lẻ trên khách hàng "sạch" thì phần lớn factor sẽ bằng 0 và không kiểm được nhánh tính điểm âm/dương.

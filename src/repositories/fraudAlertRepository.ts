@@ -66,4 +66,20 @@ export const fraudAlertRepository = {
       status,
     });
   },
+
+  /** Đếm cảnh báo gian lận theo status trên mọi giao dịch thuộc tài khoản của 1 khách hàng — dùng cho đánh giá điểm tín dụng. */
+  async countByCustomer(customerId: number): Promise<Record<FraudAlertStatus, number>> {
+    const { rows } = await pool.query<{ status: FraudAlertStatus; count: string }>(
+      `SELECT fa.status, COUNT(*) AS count
+       FROM fraud_alerts fa
+       JOIN transactions t ON t.transaction_id = fa.transaction_id
+       JOIN accounts a ON a.account_id = t.account_id
+       WHERE a.customer_id = :customerId
+       GROUP BY fa.status`,
+      { customerId }
+    );
+    const result = { open: 0, reviewing: 0, closed_fp: 0, closed_confirmed: 0 } as Record<FraudAlertStatus, number>;
+    for (const r of rows) result[r.status] = Number(r.count);
+    return result;
+  },
 };

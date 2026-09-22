@@ -18,6 +18,7 @@ const files = [
   path.join(root, "db", "migrations", "007_auth_login.sql"),
   path.join(root, "db", "migrations", "008_idempotency_claim.sql"),
   path.join(root, "db", "migrations", "009_ekyc.sql"),
+  path.join(root, "db", "migrations", "010_customer_address.sql"),
 ];
 
 const client = new pg.Client({

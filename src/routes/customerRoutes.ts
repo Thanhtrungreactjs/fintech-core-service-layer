@@ -4,6 +4,7 @@ import { accountController } from "../controllers/accountController";
 import { loanController } from "../controllers/loanController";
 import { termDepositController } from "../controllers/termDepositController";
 import { ekycController, ekycUpload } from "../controllers/ekycController";
+import { creditScoreController } from "../controllers/creditScoreController";
 import { validate } from "../middleware/validate";
 import { requireIdempotencyKey } from "../middleware/idempotency";
 import { idParam } from "../validators/common";
@@ -63,4 +64,9 @@ customerRoutes.get(
   "/:id/ekyc",
   validate({ params: idParam("id") }),
   ekycController.listByCustomer
+);
+customerRoutes.get(
+  "/:id/credit-score",
+  validate({ params: idParam("id") }),
+  creditScoreController.assess
 );

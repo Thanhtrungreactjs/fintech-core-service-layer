@@ -44,6 +44,14 @@ export const loanRepository = {
     await exec.query(`UPDATE loans SET status = :status WHERE loan_id = :id`, { id, status });
   },
 
+  async findByCustomer(customerId: number, exec: Executor = pool): Promise<Loan[]> {
+    const { rows } = await exec.query<Loan>(
+      `SELECT * FROM loans WHERE customer_id = :customerId ORDER BY loan_id DESC`,
+      { customerId }
+    );
+    return rows;
+  },
+
   /** Danh sách loan đang active có ít nhất 1 kỳ quá hạn tính đến asOf, kèm số ngày quá hạn lớn nhất. */
   async findOverdue(asOf: string, exec: Executor = pool): Promise<
     { loan_id: number; days_overdue: number; overdue_installments: number; overdue_amount: string }[]
